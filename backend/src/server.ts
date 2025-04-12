@@ -9,8 +9,8 @@ const app = Fastify(
 		logger: true,
 		https: 
 		{
-			key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-			cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
+			key: fs.readFileSync(path.join(__dirname, 'certs/key.pem')),
+			cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
 		}
 	}
 ).withTypeProvider<TypeBoxTypeProvider>();
