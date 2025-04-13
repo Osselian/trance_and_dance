@@ -8,6 +8,7 @@ RUN curl -sSL https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkc
 
 WORKDIR /app
 
+#возможно потребуется создать юзера с UID совпадающим с UID школьного компа, можно передать через .env
 COPY package*.json ./
 
 RUN npm ci
@@ -22,6 +23,8 @@ RUN mkdir -p /app/certs \
 RUN npx prisma generate
 
 RUN npm run build
+
+RUN npm prune --production
 
 EXPOSE 3000
 CMD [ "node", "dist/server.js" ]

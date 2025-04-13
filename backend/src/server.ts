@@ -2,9 +2,12 @@ import Fastify from 'fastify';
 import {TypeBoxTypeProvider} from '@fastify/type-provider-typebox';
 import fs from 'fs';
 import path from 'path';
+import fastifyCookie from '@fastify/cookie';
+import fastifyJwt from '@fastify/jwt';
+import { AuthController } from './api/controllers/AuthController';
 
 // server init
-const app = Fastify(
+const fastify = Fastify(
 	{
 		logger: true,
 		https: 
@@ -16,27 +19,23 @@ const app = Fastify(
 ).withTypeProvider<TypeBoxTypeProvider>();
 
 //test route
-app.get('/ping', async (request, reply) => {
+fastify.get('/ping', async (request, reply) => {
   return { status: 'ok', message: 'Pong!' };
 });
 
+fastify.register(fastifyCookie);
+fastify.register(fastifyJwt, {
+	secret: process.env.ACCESS_TOKEN_SECRET || 'superSecretKey'
+});
+
+const auth = new AuthController(fastify);
+auth.registerRoutes();
+
 //server start
-const start = async () => 
-{
-	try 
-	{
-		await app.listen(
-			{
-				port: 3000, host: '0.0.0.0'
-			}
-		);
-		console.log('Server is running on http://localhost:3000');
-	}
-	catch (err)
-	{
-		app.log.error(err);
+fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
+	if (err) {
+		fastify.log.error(err);
 		process.exit(1);
 	}
-};
-
-start();
+	fastify.log.info('Server starts at ${address}');
+});
