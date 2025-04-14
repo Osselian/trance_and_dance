@@ -1,98 +1,50 @@
 import { FastifyInstance, FastifyRequest, FastifyReply} from "fastify";
-import bcrypt from 'bcryptjs';
-import { PrismaClient } from "@prisma/client";
-import fastifyJWT from '@fastify/jwt';
-import fastifyCookie from "@fastify/cookie";
-
-const prisma = new PrismaClient();
-
-interface RegisterBody {
-	email: string;
-	username: string;
-	password: string;
-}
-
-interface LoginBody {
-	email: string;
-	password: string;
-}
+import { AuthService } from "../../services/AuthService";
 
 export class AuthController{
+
+	private authService = new AuthService();
+
 	constructor(private fastify: FastifyInstance) {}
+
+	//routes registration
+	public registerRoutes(): void {
+
+		this.fastify.post('/auth/register', this.register.bind(this));
+		this.fastify.post('/auth/login', this.login.bind(this));
+		this.fastify.post('/auth/refresh-token', this.refreshToken.bind(this));
+		this.fastify.post('/auth/logout', this.logout.bind(this));
+	}
 
 	//user registration
 	public async register(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-		const {email, username, password} = request.body as RegisterBody;
 		
-		//is user exists
-		const existingUser = await prisma.user.findFirst({ 
-			where: { OR: [{email}, { username}]}
-		});
-
-		if (existingUser) {
-			reply.status(400).send({message: 'Username or email already exists.'});
-			return;
+		const {email, username, password} = request.body as any;
+		
+		try {
+			const user = await this.authService.register(email, username, password);
+			//token generation
+			const accessToken = await this.generateToken(user.id, reply);
+			reply.status(201).send({ accessToken });
 		}
-
-		//hashing
-		const saltRounds = 10;
-		const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-		//user creation
-		const user = await prisma.user.create({
-			data: {
-				email,
-				username,
-				password: hashedPassword
-			}
-		});
-
-		//token generation
-		const accessToken = await this.fastify.jwt.sign({ id: user.id}, { expiresIn: '15m'});
-		const refreshToken = await this.fastify.jwt.sign({ id: user.id}, { expiresIn: '7d'});
-
-		// set token to HttpOnly cookie
-		reply.setCookie('refreshToken', refreshToken, {
-			httpOnly: true,
-			secure: true,
-			sameSite: 'strict',
-			path: '/',
-			maxAge: 7 * 24 * 60 * 60 //7 days
-		});
-
-		reply.status(201).send({ accessToken });
+		catch (err){
+			const errMsg = err instanceof Error ? err.message : 'Unknown error';
+			reply.status(400).send({ message: errMsg });
+		}
 	}
 
 	//user auth
 	public async login (request: FastifyRequest, reply: FastifyReply): Promise<void>{
-		const {email, password} = request.body as LoginBody;
 
-		const user = await prisma.user.findUnique({where: {email}});
+		const {email, password} = request.body as any;
+		const user = await this.authService.validateUser(email, password);
+
 		if (!user){
 			reply.status(400).send({message: 'Invalid credentials.'});
 			return;
 		}
 
-		const valid = await bcrypt.compare(password, user.password);
-		if (!valid){
-			reply.status(400).send({message: 'Invalid credentials.'});
-			return;
-		}
-
-		//token generation
-		const accessToken = await this.fastify.jwt.sign({ id: user.id}, { expiresIn: '15m'});
-		const refreshToken = await this.fastify.jwt.sign({ id: user.id}, { expiresIn: '7d'});
-
-		// set token to HttpOnly cookie
-		reply.setCookie('refreshToken', refreshToken, {
-			httpOnly: true,
-			secure: true,
-			sameSite: 'strict',
-			path: '/',
-			maxAge: 7 * 24 * 60 * 60 //7 days
-		});
-
-		//JWT generation
+		const accessToken = await this.generateToken(user.id, reply);
 		reply.send({ accessToken});
 	}
 
@@ -105,7 +57,7 @@ export class AuthController{
 
 		try{
 			const payload = await this.fastify.jwt.verify<{ id: number}>(refreshToken);
-			const user = await prisma.user.findUnique({ where: { id: payload.id } });
+			const user = await this.authService.getUserById(payload.id);
 			if (!user)
 				throw new Error("User not found!");
 
@@ -127,11 +79,18 @@ export class AuthController{
 		reply.send({ message: 'You successfully logout.'});
 	}
 
-	//routes registration
-	public registerRoutes(): void {
-		this.fastify.post('/auth/register', this.register.bind(this));
-		this.fastify.post('/auth/login', this.login.bind(this));
-		this.fastify.post('/auth/refresh-token', this.refreshToken.bind(this));
-		this.fastify.post('/auth/logout', this.logout.bind(this));
+	private async generateToken(userId: number, reply: FastifyReply) {
+		const accessToken = await this.fastify.jwt.sign({ id: userId }, { expiresIn: '15m' });
+		const refreshToken = await this.fastify.jwt.sign({ id: userId }, { expiresIn: '7d' });
+
+		// set token to HttpOnly cookie
+		reply.setCookie('refreshToken', refreshToken, {
+			httpOnly: true,
+			secure: true,
+			sameSite: 'strict',
+			path: '/',
+			maxAge: 7 * 24 * 60 * 60 //7 days
+		});
+		return accessToken;
 	}
 }
