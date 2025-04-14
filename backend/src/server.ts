@@ -5,6 +5,7 @@ import path from 'path';
 import fastifyCookie from '@fastify/cookie';
 import fastifyJwt from '@fastify/jwt';
 import { AuthController } from './api/controllers/AuthController';
+import fastifyMultipart from '@fastify/multipart';
 
 // server init
 const fastify = Fastify(
@@ -27,6 +28,7 @@ fastify.register(fastifyCookie);
 fastify.register(fastifyJwt, {
 	secret: process.env.ACCESS_TOKEN_SECRET || 'superSecretKey'
 });
+fastify.register(fastifyMultipart);
 
 const auth = new AuthController(fastify);
 auth.registerRoutes();
