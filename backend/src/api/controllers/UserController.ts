@@ -12,6 +12,9 @@ export class UserController {
 		this.fastify.get('/profile', this.getProfile.bind(this));
 		this.fastify.put('/profile', this.updateProfile.bind(this));
 		this.fastify.post('/avatar', this.uploadAvatar.bind(this));
+		this.fastify.post('/friend-request', this.sendFriendrequest.bind(this));
+		this.fastify.post('/friend-accept', this.acceptFriendrequest.bind(this));
+		this.fastify.get('/friends', this.gerFriends.bind(this));
 	}
 
 	async getProfile(req: FastifyRequest, reply: FastifyReply) {
@@ -63,5 +66,25 @@ export class UserController {
 		const updatedProfile = await this.userService
 			.updateProfile(userId, {avatarUrl: '/uploads/avatars/${fileName}'});
 		reply.send({ message: 'Avatar uploaded successfully', profile: updatedProfile});
+	}
+
+	async sendFriendrequest(req: FastifyRequest, reply: FastifyReply) {
+		const userId = (req as any).user.id as number;
+		const { receiverId} = req.body as { receiverId: number};
+		const result = await this.userService.sendFriendRequest(userId, receiverId);
+		reply.send(result);
+	}
+
+	async acceptFriendrequest(req: FastifyRequest, reply: FastifyReply) {
+		const userId = (req as any).user.id as number;
+		const { requesterId} = req.body as { requesterId: number};
+		const result = await this.userService.acceptFriendRequest(userId, requesterId);
+		reply.send(result);
+	}
+
+	async gerFriends(req: FastifyRequest, reply: FastifyReply) {
+		const userId = (req as any).user.id as number;
+		const friends = await this.userService.getFriends(userId);
+		reply.send(friends);
 	}
 }

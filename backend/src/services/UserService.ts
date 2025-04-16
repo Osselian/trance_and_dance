@@ -1,9 +1,18 @@
 import { UserRepository } from "../repositories/UserRepository";
+import { FriendshipRepository } from "../repositories/FriendshipRepository";
 import { UserProfileDTO } from "../dtos/UserProfileDTO";
 import bcrypt from 'bcryptjs'
+import { FriendshipStatus, Prisma } from "@prisma/client";
+
+const onlineUsers = new Set<number>();
 
 export class UserService {
 	private userRepo = new UserRepository();
+	private friendshipRepo = new FriendshipRepository();
+
+	async getProfile( userId: number){
+		return this.userRepo.findById(userId);
+	}
 
 	async updateProfile(userId: number, profileData: UserProfileDTO) {
 		const updateData: UserProfileDTO = { ...profileData };
@@ -30,7 +39,54 @@ export class UserService {
 		return this.userRepo.updateUserProfile(userId, updateData);
 	}
 
-	async getProfile( userId: number){
-		return this.userRepo.findById(userId);
+	static markUserOnline(userId: number) {
+		onlineUsers.add(userId);
+	}
+
+	static markUserOffline(userId: number) {
+		onlineUsers.delete(userId);
+	}
+
+	static isUserOnline(userId: number) {
+		onlineUsers.has(userId);
+	}
+
+	async sendFriendRequest(requesterId: number, receiverId: number) {
+		if (requesterId === receiverId) {
+			throw new Error("Can't add yourself to friends");
+		}
+
+		const existing = await this.friendshipRepo
+			.findFriensdhip(requesterId, receiverId);
+		
+		if (existing)
+			throw new Error("Friend request already exists or you are already friends");
+
+		return await this.friendshipRepo.createFriendship(requesterId, receiverId);
+	}
+
+	async acceptFriendRequest(userId: number, requesterId: number) {
+		const request = await this.friendshipRepo
+			.findFriendshipRequest(userId, requesterId);
+		
+		if (!request)
+			throw new Error("Friend request not found");
+
+		return await this.friendshipRepo
+			.updateFriendshipStatus(request.id, FriendshipStatus.ACCEPTED);
+	}
+
+	async getFriends(userId: number) {
+		const friendships = await this.friendshipRepo.getAllFriends(userId);
+
+		return friendships.map(f => {
+			const friend = f.requesterId === userId ? f.receiver : f.requester;
+			return {
+				id: friend.id,
+				username: friend.username,
+				avatarUrl: friend.avatarUrl,
+				isOnline: UserService.isUserOnline(friend.id)
+			};
+		});
 	}
 }
