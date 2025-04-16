@@ -1,10 +1,12 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
 import {TypeBoxTypeProvider} from '@fastify/type-provider-typebox';
 import fs from 'fs';
 import path from 'path';
 import fastifyCookie from '@fastify/cookie';
 import fastifyJwt from '@fastify/jwt';
 import { AuthController } from './api/controllers/AuthController';
+import { UserController } from './api/controllers/UserController';
+import fastifyMultipart from '@fastify/multipart';
 
 // server init
 const fastify = Fastify(
@@ -27,9 +29,26 @@ fastify.register(fastifyCookie);
 fastify.register(fastifyJwt, {
 	secret: process.env.ACCESS_TOKEN_SECRET || 'superSecretKey'
 });
+fastify.register(fastifyMultipart);
 
 const auth = new AuthController(fastify);
 auth.registerRoutes();
+
+fastify.register(async (app) => {
+	//add hook
+	app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+		try {
+			await request.jwtVerify();
+		}
+		catch (err){
+			reply.status(401).send({message: 'Unauthorized'});
+		}
+	});
+
+	//controller registration
+	const userController = new UserController(app);
+	userController.registerRoutes();
+}, {prefix: '/user'});
 
 //server start
 fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {

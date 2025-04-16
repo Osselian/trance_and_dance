@@ -12,12 +12,79 @@ datasource db {
 }
 
 model User {
-    id        Int      @id     @default(autoincrement())
-    email     String   @unique
-    username  String   @unique
-    password  String   //passsword hash 
-    avatarUrl String?
-    googleId  String?
-    createdAt DateTime @default(now())
-	updatedAt DateTime @updatedAt
+    id                    Int                     @id @default(autoincrement())
+    email                 String                  @unique
+    username              String                  @unique
+    password              String                  //passsword hash 
+    googleId              String?
+    avatarUrl             String?                 @default("../data/default/default_avatar.jpg")
+    wins                  Int                     @default(0)
+    losses                Int                     @default(0)
+    online                Boolean                 @default(false)
+    createdAt             DateTime                @default(now())
+    updatedAt             DateTime                @updatedAt
+
+	//friendship 
+	friendA               Friendship[]            @relation("UserFriendshipA")
+	friendB               Friendship[]            @relation("UserFriendshipB")
+
+	//match history
+	matchPlayerA          Match[]                 @relation("Player1")
+	matchPlayerB          Match[]                 @relation("Player2")
+
+	chatMsgSent           ChatMessage[]           @relation("Sender")
+	chatMsgReceived       ChatMessage[]           @relation("Receiver")
+
+	tournamentParticipant TournamentParticipant[]
+}
+
+model Friendship {
+	id        Int      @id @default(autoincrement())
+	userA     User     @relation("UserFriendshipA", fields: [userAId], references: [id])
+	userAId   Int
+	userB     User     @relation("UserFriendshipB", fields: [userBId], references: [id])
+	userBId   Int
+	createdAt DateTime @default(now())
+
+	@@unique([userAId, userBId])
+}
+
+model Match {
+	id        Int      @id @default(autoincrement())
+	player1   User     @relation("Player1", fields: [player1Id], references: [id])
+	player1Id Int
+	player2   User     @relation("Player2", fields: [player2Id], references: [id])
+	player2Id Int
+	playedAt  DateTime @default(now())
+	result    String?
+}
+
+model Tournament {
+	id           Int                      @id @default(autoincrement())
+	name         String
+	description  String?
+	startDate    DateTime
+	endDate      DateTime
+	participants TournamentParticipant[]
+}
+
+model TournamentParticipant {
+	id           Int        @id @default(autoincrement())
+	tournament   Tournament @relation(fields: [tournamentId], references: [id])
+	tournamentId Int
+	user         User       @relation(fields: [userId], references: [id])
+	userId       Int
+	registeredAt DateTime   @default(now())
+
+	@@unique([tournamentId, userId])
+}
+
+model ChatMessage {
+	id         Int      @id @default(autoincrement())
+	sender     User     @relation("Sender", fields: [senderId], references: [id])
+	senderId   Int
+	receiver   User?    @relation("Receiver", fields: [receiverId], references: [id])
+	receiverId Int?
+	content    String
+	sentAt     DateTime @default(now())
 }
