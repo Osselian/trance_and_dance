@@ -17,7 +17,7 @@ model User {
     username              String                  @unique
     password              String                  //passsword hash 
     googleId              String?
-    avatarUrl             String?                 @default("../uploads/avatars/default.jpg")
+    avatarUrl             String?                 @default("../data/default/default_avatar.jpg")
     wins                  Int                     @default(0)
     losses                Int                     @default(0)
     online                Boolean                 @default(false)
