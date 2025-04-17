@@ -15,6 +15,10 @@ export class UserRepository{
 		return prisma.user.findUnique({ where: { id } });
 	}
 
+	async findByGoogleId(googleId: string){
+		return prisma.user.findUnique({ where: { googleId }});
+	}
+
 	async existsByEmailOrUsername(email: string, username: string){
 		return prisma.user.findFirst({
 			where: { OR: [ {email}, { username}] }
@@ -25,6 +29,15 @@ export class UserRepository{
 		return prisma.user.create({
 			data: { email, username, password }
 		})
+	}
+
+	async createWithGoogle(data: {
+		googleId: string, 
+		email: string,
+		username: string,
+		avatarUrl?: string
+	}) {
+		return prisma.user.create({ data });
 	}
 
 	async updateUserProfile(id: number, data: Partial<User>): Promise<User> {

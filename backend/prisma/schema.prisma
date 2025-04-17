@@ -15,8 +15,8 @@ model User {
     id                    Int                     @id @default(autoincrement())
     email                 String                  @unique
     username              String                  @unique
-    password              String                  //passsword hash 
-    googleId              String?
+    password              String?                 //passsword hash 
+    googleId              String?                 @unique
     avatarUrl             String?                 @default("../data/default/default_avatar.jpg")
     wins                  Int                     @default(0)
     losses                Int                     @default(0)
