@@ -14,6 +14,7 @@ export class AuthController{
 		this.fastify.post('/auth/login', this.login.bind(this));
 		this.fastify.post('/auth/refresh-token', this.refreshToken.bind(this));
 		this.fastify.post('/auth/logout', this.logout.bind(this));
+		this.fastify.post('/auth/google', this.googleLogin.bind(this))
 	}
 
 	//user registration
@@ -34,7 +35,7 @@ export class AuthController{
 	}
 
 	//user auth
-	public async login (request: FastifyRequest, reply: FastifyReply): Promise<void>{
+	async login (request: FastifyRequest, reply: FastifyReply): Promise<void>{
 
 		const {email, password} = request.body as any;
 		const user = await this.authService.validateUser(email, password);
@@ -46,6 +47,14 @@ export class AuthController{
 
 		const accessToken = await this.generateToken(user.id, reply);
 		reply.send({ accessToken});
+	}
+
+	async googleLogin(req: FastifyRequest, reply: FastifyReply){
+		const { googleToken } = req.body as { googleToken: string};
+
+		const user = await this.authService.verifyGoogleTokenAndLogin(googleToken)
+		const token = await this.generateToken(user.id, reply);
+		reply.send({ token});
 	}
 
 	async refreshToken(req: FastifyRequest, reply: FastifyReply){

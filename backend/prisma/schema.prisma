@@ -15,8 +15,8 @@ model User {
     id                    Int                     @id @default(autoincrement())
     email                 String                  @unique
     username              String                  @unique
-    password              String                  //passsword hash 
-    googleId              String?
+    password              String?                 //passsword hash 
+    googleId              String?                 @unique
     avatarUrl             String?                 @default("../data/default/default_avatar.jpg")
     wins                  Int                     @default(0)
     losses                Int                     @default(0)
@@ -25,8 +25,8 @@ model User {
     updatedAt             DateTime                @updatedAt
 
 	//friendship 
-	friendA               Friendship[]            @relation("UserFriendshipA")
-	friendB               Friendship[]            @relation("UserFriendshipB")
+	friendRequestSent     Friendship[]            @relation("FriendReqSent")
+	friendRequestReceived Friendship[]            @relation("FriendReqReceived")
 
 	//match history
 	matchPlayerA          Match[]                 @relation("Player1")
@@ -39,14 +39,15 @@ model User {
 }
 
 model Friendship {
-	id        Int      @id @default(autoincrement())
-	userA     User     @relation("UserFriendshipA", fields: [userAId], references: [id])
-	userAId   Int
-	userB     User     @relation("UserFriendshipB", fields: [userBId], references: [id])
-	userBId   Int
-	createdAt DateTime @default(now())
+	id          Int              @id @default(autoincrement())
+	requester   User             @relation("FriendReqSent", fields: [requesterId], references: [id])
+	requesterId Int
+	receiver    User             @relation("FriendReqReceived", fields: [receiverId], references: [id])
+	receiverId  Int
+	status      FriendshipStatus @default(PENDING)
+	createdAt   DateTime         @default(now())
 
-	@@unique([userAId, userBId])
+	@@unique([requesterId, receiverId])
 }
 
 model Match {
@@ -87,4 +88,10 @@ model ChatMessage {
 	receiverId Int?
 	content    String
 	sentAt     DateTime @default(now())
+}
+
+enum FriendshipStatus {
+	PENDING 
+	ACCEPTED
+	REJECTED
 }
