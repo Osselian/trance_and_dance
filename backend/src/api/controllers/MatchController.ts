@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { MatchRepository } from '../../repositories/MatchRepository'
-import { MatchStatus } from '@prisma/client';
 
 export class MatchController {
 	private matchRepo = new MatchRepository();

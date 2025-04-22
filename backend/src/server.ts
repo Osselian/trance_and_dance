@@ -10,6 +10,7 @@ import { MatchmakingController } from './api/controllers/MatchmakingController';
 import fastifyMultipart from '@fastify/multipart';
 import { registerSecure } from './utils/registerSecure';
 import { MatchController } from './api/controllers/MatchController';
+import { MatchmakingService } from './services/MatchmakingService';
 
 // server init
 const fastify = Fastify(
@@ -47,6 +48,7 @@ fastify.register(async (app) => {
   mmCtrl.registerPublicRoutes();     // тут /process
 }, { prefix: '/matchmaking' });
 
+
 //server start
 fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
 	if (err) {
@@ -55,3 +57,6 @@ fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
 	}
 	fastify.log.info('Server starts at ${address}');
 });
+
+const mmService = new MatchmakingService();
+setInterval(() => mmService.processQueue().catch(console.error), 1000);
