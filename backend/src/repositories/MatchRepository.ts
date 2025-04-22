@@ -44,4 +44,14 @@ export class MatchRepository{
 			orderBy: {startAt: 'desc'}
 		});
 	}
+
+	async findByPlayerAndStatus(userId: number, status: MatchStatus): Promise<Match[]> {
+		return prisma.match.findMany({
+			where: {
+				status: status,
+				OR: [{player1Id: userId}, {player2Id: userId}]
+			},
+			orderBy: {startAt: 'desc'}
+		});
+	}
 }

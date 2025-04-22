@@ -1,4 +1,4 @@
-import { PrismaClient, Match} from "@prisma/client";
+import { PrismaClient, Match, MatchStatus} from "@prisma/client";
 
 export class MatchmakingRepository {
 	constructor( private prisma = new PrismaClient()) {}
@@ -7,6 +7,19 @@ export class MatchmakingRepository {
 	{
 		return this.prisma.$transaction(async (tx) => 
 		{
+			const exists = await tx.match.findFirst({
+				where: {
+					status: { in: [MatchStatus.PENDING, MatchStatus.ONGOING]},
+					OR: [ 
+						{player1Id: {in: [player1Id, player2Id]}},
+						{player2Id: {in: [player1Id, player2Id]}}
+					]
+				}
+			});
+			if (exists) 
+				throw new Error('Match for thees players already exists');	
+			
+
 			await tx.matchMakingRequest.deleteMany({
 				where: { userId: { in: [player1Id, player2Id] } }
 			});

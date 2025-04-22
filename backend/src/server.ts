@@ -9,6 +9,7 @@ import { UserController } from './api/controllers/UserController';
 import { MatchmakingController } from './api/controllers/MatchmakingController';
 import fastifyMultipart from '@fastify/multipart';
 import { registerSecure } from './utils/registerSecure';
+import { MatchController } from './api/controllers/MatchController';
 
 // server init
 const fastify = Fastify(
@@ -38,6 +39,7 @@ auth.registerRoutes();
 
 registerSecure(fastify, '/user', UserController, 'registerRoutes');
 registerSecure(fastify, '/matchmaking', MatchmakingController, 'registerProtectedRoutes');
+registerSecure(fastify, '/match', MatchController, 'registerRoutes');
 
 // public: /matchmaking/process
 fastify.register(async (app) => {

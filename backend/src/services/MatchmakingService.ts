@@ -1,7 +1,8 @@
 import { MatchMakingRequestRepository } from "../repositories/MatchMakingRequestRepository";
 import { UserRepository} from "../repositories/UserRepository";
 import { MatchmakingRepository } from "../repositories/MatchmakingRepository";
-import {Match, MatchMakingRequest} from '@prisma/client'
+import {Match, MatchMakingRequest, MatchStatus} from '@prisma/client'
+import { MatchRepository } from "../repositories/MatchRepository";
 
 export class MatchmakingService {
 
@@ -9,6 +10,7 @@ export class MatchmakingService {
 		private mmReqRepo = new MatchMakingRequestRepository(),
 		private userRepo = new UserRepository(),
 		private mmRepo = new MatchmakingRepository(),
+		private matchRepo = new MatchRepository()
 	) {}
 
 	async joinQueue (userId: number): Promise<void> {
@@ -40,6 +42,14 @@ export class MatchmakingService {
 			result.push(match);
 		}
 		return result;
+	}
+	
+	async findMatchForPlayer(userId: number): Promise<Match | undefined> {
+		const matches = await this.matchRepo.findByPlayerAndStatus(userId, MatchStatus.PENDING);
+		if (matches.length === 0)
+			return undefined;
+		const match = matches[0];
+		return match;
 	}
 
 	private getPairs(requests: MatchMakingRequest[]): [MatchMakingRequest, MatchMakingRequest][] {
