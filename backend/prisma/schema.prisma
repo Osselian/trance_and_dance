@@ -47,15 +47,16 @@ model Friendship {
 }
 
 model Match {
-	id        Int         @id @default(autoincrement())
-	player1   User        @relation("Player1", fields: [player1Id], references: [id])
-	player1Id Int
-	player2   User        @relation("Player2", fields: [player2Id], references: [id])
-	player2Id Int
-	status    MatchStatus @default(PENDING)
-    startAt   DateTime    @default(now())
-    playedAt  DateTime    @default(now())
-	result    String?
+    id              Int         @id @default(autoincrement())
+    player1         User        @relation("Player1", fields: [player1Id], references: [id])
+    player1Id       Int
+    player2         User        @relation("Player2", fields: [player2Id], references: [id])
+    player2Id       Int
+    status          MatchStatus @default(PENDING)
+    startAt         DateTime    @default(now())
+    playedAt        DateTime    @default(now())
+    result          String?
+    tournamentMatch TournamentMatch?
 }
 
 model MatchMakingRequest {
@@ -75,6 +76,20 @@ model Tournament {
 	startDate    DateTime
 	endDate      DateTime
 	participants TournamentParticipant[]
+	matches      TournamentMatch[]
+}
+
+model TournamentMatch{
+	id           Int        @id @default(autoincrement())
+	match        Match      @relation(fields: [matchId], references: [id])
+	matchId      Int        @unique
+	tournament   Tournament @relation(fields: [tournamentId], references: [id])
+	tournamentId Int
+	round        Int
+	bracketPos   Int
+	createdAt    DateTime   @default(now())
+
+	@@index([tournamentId, round])
 }
 
 model TournamentParticipant {
