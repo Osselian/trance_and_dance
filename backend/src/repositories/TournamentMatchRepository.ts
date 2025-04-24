@@ -23,10 +23,15 @@ export class TournamentMatchRepository {
 	}
 
 	async updateStatus(id: number, status: MatchStatus): Promise<TournamentMatch> {
-		return prisma.tournamentMatch.update({
-			where: { id},
-			data: { match: { update: { status}}}
-		});
+		return prisma.$transaction(async ts => {
+			await ts.match.update({
+				where: { id: (await ts.tournamentMatch.findUnique({
+					where: {id}
+				}))?.matchId},
+				data: {status}
+			});
+			return ts.tournamentMatch.update({ where: { id}, data: {}});
+		});		
 	}
 
 	async delete(id: number): Promise<TournamentMatch> {
