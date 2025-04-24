@@ -12,8 +12,17 @@ export class TournamentMatchRepository {
 		return prisma.tournamentMatch.findUnique({ where: { id}});
 	}
 
+	async findAllByTournament(tournamentId: number): Promise<TournamentMatch[]> 
+	{
+		return prisma.tournamentMatch.findMany({ 
+			where: { tournamentId},
+			orderBy: { bracketPos: 'asc'},
+			include: { match: true}
+		});
+	}
+
 	async findByTournamentAndRound(tournamentId: number, round: number): 
-	Promise<TournamentMatch[]> 
+		Promise<TournamentMatch[]> 
 	{
 		return prisma.tournamentMatch.findMany({ 
 			where: { tournamentId, round},

@@ -1,4 +1,4 @@
-export interface TournamentCreateDto {
+export interface TournamentDto {
 		name: string;
 		description?: string;
 		startDate: Date;
