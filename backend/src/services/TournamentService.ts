@@ -1,4 +1,4 @@
-import { TournamentDto as TournamentDto } from "../dtos/TournamentCreateDto";
+import { TournamentDto as TournamentDto } from "../dtos/TournamentDto";
 import { TournamentRepository } from "../repositories/TournamentRepository";
 import { Tournament } from "@prisma/client";
 

@@ -1,5 +1,5 @@
 import { PrismaClient, Tournament} from '@prisma/client'
-import { TournamentDto as TournamentDto } from '../dtos/TournamentCreateDto';
+import { TournamentDto as TournamentDto } from '../dtos/TournamentDto';
 
 const prisma = new PrismaClient();
 

@@ -1,6 +1,6 @@
 import { TournamentMatchRepository } from "../repositories/TournamentMatchRepository"; 
 import { MatchRepository } from "../repositories/MatchRepository";
-import { TournamentMatch, MatchStatus } from "@prisma/client";
+import { TournamentMatch} from "@prisma/client";
 
 export class TournamentMatchService {
 	constructor(
