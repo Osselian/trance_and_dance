@@ -24,6 +24,7 @@ export class TournamentMatchService {
 			)
 		);
 
+		//проверить эти касты
 		const tmEntries = await Promise.all(
 			matches.map(async (m, idx) => {
 				return this.tmRepo.create({
@@ -50,8 +51,10 @@ export class TournamentMatchService {
 			throw new Error('Tournament match not found');
 
 		await this.matchRepo.completeMatch(tm.matchId, result);
-		return this.tmRepo.findById(tournamentMatchId) as Promise<TournamentMatch>;
-
+		//проверить эти касты
+		const updatedTm = await this.tmRepo.findById(tournamentMatchId);
+		if (!updatedTm)
+			throw new Error('Tournament match not found after complete!');
+		return updatedTm;
 	}
-
 }
