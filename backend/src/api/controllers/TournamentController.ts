@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
 import { TournamentService } from '../../services/TournamentService';
 import { TournamentDto } from '../../dtos/TournamentDto';
+import { parseTournamentDto } from '../../utils/parseTournamentDto';
 
 export class TournamentController {
 	private tournamentService = new TournamentService();
@@ -21,7 +22,7 @@ export class TournamentController {
 	}
 
 	private async createTournament(req: FastifyRequest, reply: FastifyReply) {
-		const dto: TournamentDto = req.body as any;
+		const dto: TournamentDto = parseTournamentDto(req.body as any);
 		try {
 			const tour = await this.tournamentService.createTournament(dto);
 			reply.status(201).send(tour);
