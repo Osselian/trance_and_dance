@@ -37,7 +37,7 @@ export class TournamentMatchController {
 	}
 
 	private async complete(req: FastifyRequest, reply: FastifyReply) {
-		const tournamentMatchId = Number((req.params as any).id);
+		const tournamentMatchId = Number((req.params as any).mId);
 		const { result } = req.body as { result: string};
 		try { 
 			const updated = await this.tmService

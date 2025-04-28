@@ -47,9 +47,9 @@ export class TournamentController {
 
 	private async updateTournament(req: FastifyRequest, reply: FastifyReply) {
 		const id = Number((req.params as any).id);
-		const updates = req.body as any;
+		const dto: TournamentDto = parseTournamentDto(req.body as any);
 		try {
-			const tour = await this.tournamentService.updateTournament(id, updates);
+			const tour = await this.tournamentService.updateTournament(id, dto);
 			reply.send(tour);
 		} catch (err){
 			const msg = err instanceof Error ? err.message : 'Error';
