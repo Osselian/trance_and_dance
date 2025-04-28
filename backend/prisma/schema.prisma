@@ -32,6 +32,10 @@ model User {
 	chatMsgSent           ChatMessage[]           @relation("Sender")
 	chatMsgReceived       ChatMessage[]           @relation("Receiver")
 	tournamentParticipant TournamentParticipant[]
+	blocker               Block[]                 @relation("Blocker")
+	blocked               Block[]                 @relation("Blocked")
+	inviter               GameInvitation[]        @relation("Inviter")
+	invitee               GameInvitation[]        @relation("Invitee")
 }
 
 model Friendship {
@@ -47,14 +51,14 @@ model Friendship {
 }
 
 model Match {
-    id              Int         @id @default(autoincrement())
-    player1         User        @relation("Player1", fields: [player1Id], references: [id])
-    player1Id       Int
-    player2         User        @relation("Player2", fields: [player2Id], references: [id])
-    player2Id       Int
-    status          MatchStatus @default(PENDING)
-    startAt         DateTime    @default(now())
-    playedAt        DateTime    @default(now())
+    id              Int              @id @default(autoincrement())
+    player1         User             @relation("Player1", fields: [player1Id], references: [id])
+    player1Id       Int              
+    player2         User             @relation("Player2", fields: [player2Id], references: [id])
+    player2Id       Int       
+    status          MatchStatus      @default(PENDING)
+    startAt         DateTime         @default(now())
+    playedAt        DateTime         @default(now())
     result          String?
     tournamentMatch TournamentMatch?
 }
@@ -102,15 +106,48 @@ model TournamentParticipant {
 
 	@@unique([tournamentId, userId])
 }
-
+model Block {
+	id        Int      @id @default(autoincrement())
+	blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+	blockerId Int
+	blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+	blockedId Int
+	createdAt DateTime @default(now())
+}
 model ChatMessage {
-	id         Int      @id @default(autoincrement())
-	sender     User     @relation("Sender", fields: [senderId], references: [id])
+	id         Int         @id @default(autoincrement())
+	sender     User        @relation("Sender", fields: [senderId], references: [id])
 	senderId   Int
-	receiver   User?    @relation("Receiver", fields: [receiverId], references: [id])
-	receiverId Int?
+	receiver   User        @relation("Receiver", fields: [receiverId], references: [id])
+	receiverId Int
+	type       MessageType @default(TEXT)
 	content    String
-	sentAt     DateTime @default(now())
+	createdAt  DateTime    @default(now())
+	isRead     Boolean     @default(false)
+
+	@@index([receiverId, isRead])
+}
+
+model GameInvitation {
+	id          Int          @id @default(autoincrement())
+	from        User         @relation("Inviter", fields: [fromId], references: [id])
+	fromId      Int
+	to          User         @relation("Invitee", fields: [toId], references: [id])
+	toId        Int
+	game        String       @default("Pong")
+	status      InviteStatus @default(PENDING)
+	createdAt   DateTime     @default(now())
+	respondedAt DateTime?
+	expiresAt   DateTime     @default(dbgenerated("datetime('now', '+1 hour')"))
+
+	@@index([toId, status])
+	@@index([fromId, status])
+}
+
+enum InviteStatus {
+	PENDING
+	ACCEPTED
+	REJECTED
 }
 
 enum FriendshipStatus {
@@ -123,4 +160,10 @@ enum MatchStatus {
 	PENDING 
 	ONGOING
 	COMPLETED
+}
+
+enum MessageType {
+	TEXT
+	INVITE_GAME
+	TOURNAMENT
 }
