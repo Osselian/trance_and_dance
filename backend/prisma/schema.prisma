@@ -116,6 +116,7 @@ model Block {
 
 	@@unique([blockerId, blockedId])
 }
+
 model ChatMessage {
 	id         Int         @id @default(autoincrement())
 	sender     User        @relation("Sender", fields: [senderId], references: [id])
@@ -128,6 +129,7 @@ model ChatMessage {
 	isRead     Boolean     @default(false)
 
 	@@index([receiverId, isRead])
+	@@unique([createdAt, id])
 }
 
 model GameInvitation {
