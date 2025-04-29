@@ -138,7 +138,7 @@ model GameInvitation {
 	status      InviteStatus @default(PENDING)
 	createdAt   DateTime     @default(now())
 	respondedAt DateTime?
-	expiresAt   DateTime     @default(dbgenerated("datetime('now', '+1 hour')"))
+	expiresAt   DateTime     
 
 	@@index([toId, status])
 	@@index([fromId, status])
