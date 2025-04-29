@@ -14,8 +14,9 @@ export class GameInvitationRepository {
 	async findIncoming(toId: number, cursor?: number) {
 		return prisma.gameInvitation.findMany({
 			where: { toId, status: InviteStatus.PENDING},
-			...(cursor && { cursor: { id: cursor}, skip: 1}) // проверить на корректность
-		});
+			orderBy : {id: 'desc'},
+			...(cursor && { cursor: { id: cursor}, skip: 1})
+				});
 	}
 
 	async findOutgoing(fromId: number) {
