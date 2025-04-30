@@ -1,23 +1,21 @@
 import { PrismaClient, MessageType}  from '@prisma/client'
+import { PagingDto } from '../dtos/PagingDto';
 
 const prisma = new PrismaClient();
 
 export class ChatMessageRepository {
 
 	async sendMessage(
-		senderId: number, 
-		receiverId: number, 
-		content: string, 
-		type: MessageType) 
+		senderId: number, receiverId: number, content: string, type: MessageType) 
 	{
 		return prisma.chatMessage.create({
 			data: {senderId, receiverId, content, type}
 		});
 	}
 
-	async getConversation(
-		userA: number, userB: number, limit = 50, lastId?: number, lastCreatedAt?: Date) 
+	async getConversation(userA: number, userB: number, paging: PagingDto) 
 	{
+		const { limit = 50, lastId, lastCreatedAt} = paging;
 		return prisma.chatMessage.findMany({
 			where: {
 				OR: [
@@ -43,13 +41,16 @@ export class ChatMessageRepository {
 		})
 	}
 
-	async getUnread(receiverId: number, lastId?: number, lastCreatedAt?: Date) {
+	async getUnread(receiverId: number, paging: PagingDto) 
+	{
+		const { limit = 50, lastId, lastCreatedAt} = paging;
 		return prisma.chatMessage.findMany({
 			where: { receiverId, isRead: false},
 			orderBy: [
 				{ createdAt: 'asc'},
 				{ id: 'asc'}
 			],
+			take: limit,
 			...((lastId !== undefined && lastCreatedAt !== undefined) 
 				? { cursor : {createdAt_id: {createdAt: lastCreatedAt, id: lastId}}, skip: 1}
 				: {})
