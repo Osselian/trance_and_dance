@@ -6,6 +6,9 @@ import { MatchController } from "../api/controllers/MatchController";
 import { TournamentController } from "../api/controllers/TournamentController";
 import { TournamentMatchController } from "../api/controllers/TournamentMatchController";
 import { TournamentParticipantController } from "../api/controllers/TournamentParticipantController";
+import { BlockController } from "../api/controllers/BlockController";
+import { ChatController } from "../api/controllers/ChatController";
+import { InvitationController } from "../api/controllers/InvitationController";
 
 type ControllerConstructor = new (app: FastifyInstance) => any;
 
@@ -25,6 +28,9 @@ export function registerRoutes(fastify: FastifyInstance) {
 	registerSecure(fastify, '/tournament', TournamentController, 'registerSecureRoutes');
 	registerSecure(fastify, '/tournament', TournamentMatchController, 'registerSecureRoutes');
 	registerSecure(fastify, '/tournament', TournamentParticipantController, 'registerSecureRoutes');
+	registerSecure(fastify, '/block', BlockController, 'registerSecureRoutes');
+	registerSecure(fastify, '/chat', ChatController, 'registerSecureRoutes');
+	registerSecure(fastify, '/invitation', InvitationController, 'registerSecureRoutes');
 
 	// public: /matchmaking/process
 	fastify.register(async (app) => {

@@ -27,4 +27,8 @@ export class BlockService {
 	async isBlockedBy(blockedId: number, blockerId: number): Promise<boolean> {
 		return this.blockRepo.isBlocked(blockerId, blockedId);
 	}
+
+	async listBlocked(blockerId: number){
+		 return this.blockRepo.listBlocked(blockerId);
+	}
 }
