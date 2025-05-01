@@ -14,9 +14,10 @@ export class GameInvitationRepository {
 	async findIncoming(toId: number, paging: PagingDto) 
 	{
 		const { limit = 50, lastId} = paging;
+		const now = new Date();
 
 		return prisma.gameInvitation.findMany({
-			where: { toId, status: InviteStatus.PENDING},
+			where: { toId, status: InviteStatus.PENDING, expiresAt: { gt: now}},
 			orderBy : {id: 'desc'},
 			take: limit,
 			...(lastId && { cursor: { id: lastId}, skip: 1})

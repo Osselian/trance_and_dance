@@ -41,6 +41,12 @@ export class BlockController {
 
 	private async list(req: FastifyRequest, reply: FastifyReply) {
 		const blockerId = (req.user as any).id;
-		const res = await this.blockService.listBlocked(blockerId);
+		try {
+			const res = await this.blockService.listBlocked(blockerId);
+			reply.send(res);
+		}
+		catch(err){
+			reply.status(400).send({ message: (err as Error).message});
+		}
 	}
 }

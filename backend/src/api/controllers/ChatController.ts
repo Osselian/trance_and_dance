@@ -8,10 +8,10 @@ export class ChatController {
 		private chatService = new ChatService()
 	) {}
 
-	public registeSecureRoutes() {
+	public registerSecureRoutes() {
 		this.fastify.post('/:id/message', this.sendMessage.bind(this));
 		this.fastify.get('/:id/conversation', this.getConversation.bind(this));
-		this.fastify.get('/unread', this.getUnread.bind(this));
+		this.fastify.get('/:id/unread', this.getUnread.bind(this));
 	}
 
 	private async sendMessage(req: FastifyRequest, reply: FastifyReply){

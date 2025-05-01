@@ -9,7 +9,7 @@ export class InvitationService {
 		private matchRepo = new MatchRepository()
 	) {}
 
-	async sendInvite(fromId: number, toId: number, game?: string, expiresAtMs = 3000) {
+	async sendInvite(fromId: number, toId: number, game?: string, expiresAtMs = 5000 * 60) {
 		if (fromId === toId) {
 			throw new Error("Can't invite yourself");
 		}
