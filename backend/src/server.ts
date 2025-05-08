@@ -7,6 +7,7 @@ import fastifyJwt from '@fastify/jwt';
 import fastifyMultipart from '@fastify/multipart';
 import { MatchmakingService } from './services/MatchmakingService';
 import { registerRoutes } from './utils/registerRoutes';
+import fastifyCors from '@fastify/cors';
 
 // server init
 const fastify = Fastify(
@@ -20,6 +21,11 @@ const fastify = Fastify(
 	}
 ).withTypeProvider<TypeBoxTypeProvider>();
 
+fastify.register(fastifyCors, {
+	origin: ['http://localhost:5173'],
+	credentials: true,
+	methods: ['GET', 'POST', 'DELETE', 'OPTIONS']
+});
 
 fastify.register(fastifyCookie);
 fastify.register(fastifyJwt, {
