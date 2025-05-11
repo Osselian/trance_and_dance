@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  prometheus:
+    container_name: prometheus
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+    volumes:
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-tier
+    restart: always
+
+volumes:
+  prometheus-data:
+
+networks:
+  monitoring-tier:
