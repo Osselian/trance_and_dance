@@ -13,11 +13,6 @@ export const registerView  = `
         </tr>
 
         <tr class="table-row-alt">
-          <td class="table-cell-label">Name</td>
-          <td class="table-cell-input"><input type="text" name="name" class="input" required /></td>
-        </tr>
-
-        <tr class="table-row-alt">
           <td class="table-cell-label">Email</td>
           <td class="table-cell-input"><input type="email" name="email" class="input" required /></td>
         </tr>
@@ -40,8 +35,9 @@ export const registerView  = `
 
 import { AuthAPI } from '../api/auth'
 
+
 export function registerInit() {
-  const form = document.querySelector('form')!
+  const form = document.querySelector<HTMLFormElement>('form')!
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
 
@@ -51,10 +47,10 @@ export function registerInit() {
 
     try {
       const { accessToken } = await AuthAPI.register({ email, username, password })
-      localStorage.setItem('token', accessToken)   // сохраняем JWT
-      location.hash = '#/login'                    // переходим на страницу входа
+      localStorage.setItem('token', accessToken)
+      location.hash = '#/profile'
     } catch (err) {
-      alert((err as Error).message)                // показываем ошибку сервера
+      alert((err as Error).message)
     }
   })
 }
