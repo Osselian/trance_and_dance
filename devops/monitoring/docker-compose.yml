@@ -14,8 +14,29 @@ services:
       - monitoring-tier
     restart: always
 
+  grafana:
+    container_name: grafana
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_DEFAULT_THEME=light
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring-tier
+    restart: always
+
 volumes:
   prometheus-data:
+  grafana-data:
 
 networks:
   monitoring-tier:
+
+
