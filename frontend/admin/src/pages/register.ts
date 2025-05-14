@@ -48,6 +48,7 @@ export function registerInit() {
     try {
       const { accessToken } = await AuthAPI.register({ email, username, password })
       localStorage.setItem('token', accessToken)
+      window.dispatchEvent(new Event('auth-changed'));
       location.hash = '#/profile'
     } catch (err) {
       alert((err as Error).message)

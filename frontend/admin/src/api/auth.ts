@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL ?? 'https://localhost:3000'
+export const BASE = import.meta.env.VITE_API_URL ?? 'https://localhost:3000'
 
 async function post<T>(endpoint: string, body?: unknown): Promise<T> {
   const resp = await fetch(BASE + '/auth' + endpoint, {
@@ -36,25 +36,64 @@ async function put<T>(url: string, body: unknown): Promise<T> {
   return r.json()
 }
 
+export interface Profile {
+  username: string;
+  email:    string;
+  avatarUrl:string;
+}
 
 export const AuthAPI = {
-  register: (data: { email: string; username: string; password: string }) =>
-    post<{ accessToken: string }>('/register', data),
 
-  login: (data: { email: string; password: string }) =>
-    post<{ accessToken: string }>('/login', data),
+  async register(data: RegisterData) {
+    const resp = await post<{ accessToken:string }>('/register', data);
+    localStorage.setItem('token', resp.accessToken);
+    return resp;
+  },
+  async login(data: LoginData) {
+    const resp = await post<{ accessToken:string }>('/login', data);
+    localStorage.setItem('token', resp.accessToken);
+    return resp;
+  },
+  // register: (data: { email: string; username: string; password: string }) =>
+  //   post<{ accessToken: string }>('/register', data),
+
+  // login: (data: { email: string; password: string }) =>
+  //   post<{ accessToken: string }>('/login', data),
 
   refresh: () => post<{ accessToken: string }>('/refresh-token'),
   logout:  () => post<{ message: string }>('/logout'),
 
   getProfile: () =>
-    get<{
-      id: number
-      username: string
-      email: string
-      avatarUrl: string | null
-    }>('/user/profile'),
+      // Теперь указываем, что get вернёт именно Profile
+      get<Profile>('/user/profile'),
 
-  updateProfile: (data: { username?: string; password?: string }) =>
-    put('/user/profile', data),
+    updateProfile: (data: {
+      username: string
+      email:    string
+      password?: string
+      avatarUrl?: string
+    }) =>
+      // И put вернёт обновлённый Profile
+      put<Profile>('/user/profile', data),
+
+    uploadAvatar: (file: File): Promise<string> => {
+        const form = new FormData()
+        form.append('avatar', file)
+
+        return fetch(BASE + '/user/avatar', {
+          method:      'POST',
+          credentials: 'include',
+          headers:     authHeaders(),
+          body:        form,
+        })
+        .then(async resp => {
+          if (!resp.ok) {
+            const err = await resp.json()
+            throw new Error(err.message || resp.status.toString())
+          }
+          // backend returns { message, profile }
+          const data: { message: string; profile: Profile } = await resp.json()
+          return data.profile.avatarUrl
+        })
+      }
 }
