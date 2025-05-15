@@ -1,5 +1,30 @@
 export const BASE = import.meta.env.VITE_API_URL ?? 'https://localhost:3000'
 
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  username: string;
+  email:    string;
+  password: string;
+}
+
+export interface Profile {
+  username: string;
+  email:    string;
+  avatarUrl:string;
+}
+
+export interface GoogleLoginParams {
+  googleToken: string
+}
+
+export interface GoogleLoginResponse {
+  token: string
+}
+
 async function post<T>(endpoint: string, body?: unknown): Promise<T> {
   const resp = await fetch(BASE + '/auth' + endpoint, {
     method: 'POST',
@@ -36,11 +61,6 @@ async function put<T>(url: string, body: unknown): Promise<T> {
   return r.json()
 }
 
-export interface Profile {
-  username: string;
-  email:    string;
-  avatarUrl:string;
-}
 
 export const AuthAPI = {
 
@@ -54,17 +74,17 @@ export const AuthAPI = {
     localStorage.setItem('token', resp.accessToken);
     return resp;
   },
-  // register: (data: { email: string; username: string; password: string }) =>
-  //   post<{ accessToken: string }>('/register', data),
 
-  // login: (data: { email: string; password: string }) =>
-  //   post<{ accessToken: string }>('/login', data),
+  async googleLogin(data: GoogleLoginParams): Promise<GoogleLoginResponse> {
+    const resp = await post<GoogleLoginResponse>('/google', data)
+    localStorage.setItem('token', resp.token)
+    return resp
+  },
 
   refresh: () => post<{ accessToken: string }>('/refresh-token'),
   logout:  () => post<{ message: string }>('/logout'),
 
   getProfile: () =>
-      // Теперь указываем, что get вернёт именно Profile
       get<Profile>('/user/profile'),
 
     updateProfile: (data: {
@@ -73,7 +93,6 @@ export const AuthAPI = {
       password?: string
       avatarUrl?: string
     }) =>
-      // И put вернёт обновлённый Profile
       put<Profile>('/user/profile', data),
 
     uploadAvatar: (file: File): Promise<string> => {
@@ -91,7 +110,6 @@ export const AuthAPI = {
             const err = await resp.json()
             throw new Error(err.message || resp.status.toString())
           }
-          // backend returns { message, profile }
           const data: { message: string; profile: Profile } = await resp.json()
           return data.profile.avatarUrl
         })

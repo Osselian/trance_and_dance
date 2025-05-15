@@ -1,12 +1,15 @@
-// import { home }     from './pages/home'
+import { homeView }    from './pages/home'
 import { registerView, registerInit }  from './pages/register'
 import { profileView, profileInit }    from './pages/profile'
+import { loginView, loginInit }    from './pages/login'
 
 type Route = { view: string; init?: () => void }
 
 const routes: Record<string, Route> = {
+  '#/': { view: homeView },
   '#/register': { view: registerView, init: registerInit },
   '#/profile': { view: profileView, init: profileInit },
+  '#/login': { view: loginView, init: loginInit },
 }
 
 function mountRoute() {

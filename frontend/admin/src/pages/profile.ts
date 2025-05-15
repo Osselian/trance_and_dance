@@ -1,60 +1,90 @@
 export const profileView = `
-<section class="p-6 max-w-md space-y-4">
-  <h1 class="text-3xl font-semibold">My profile</h1>
+<section class="p-6 max-w-4xl">
+  <h1 class="text-3xl font-semibold mb-4">My profile</h1>
 
   <div class="flex flex-col md:flex-row items-start gap-8">
-    <div class="relative w-24 h-24 rounded-full overflow-hidden border flex-shrink-0">
-      <img
-        id="avatar-img"
-        src="/img/default-avatar.jpg"
-        onerror="this.onerror=null;this.src='/img/default-avatar.jpg'"
-        class="w-full h-full object-cover"
-      />
-      <input
-        id="avatar-input"
-        type="file"
-        accept="image/*"
-        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer hidden"
-      />
+    <!-- Левая колонка: аватар + данные профиля -->
+    <div class="flex-shrink-0">
+      <div class="relative w-24 h-24 rounded-full overflow-hidden border">
+        <img
+          id="avatar-img"
+          src="/img/default-avatar.jpg"
+          onerror="this.onerror=null;this.src='/img/default-avatar.jpg'"
+          class="w-full h-full object-cover"
+        />
+        <input
+          id="avatar-input"
+          type="file"
+          accept="image/*"
+          class="absolute inset-0 w-full h-full opacity-0 cursor-pointer hidden"
+        />
+      </div>
     </div>
 
-    <table class="border border-gray-400 text-left w-full">
-      <tbody>
-        <tr>
-          <td class="table-cell-label">Login</td>
-          <td class="table-cell-input">
-            <input name="login" class="input" readonly />
-          </td>
-        </tr>
-        <tr class="table-row-alt">
-          <td class="table-cell-label">Email</td>
-          <td class="table-cell-input">
-            <input name="email" class="input" readonly />
-          </td>
-        </tr>
-        <tr class="table-row-alt">
-          <td class="table-cell-label">Password</td>
-          <td class="table-cell-input">
-            <input
-              name="password"
-              type="password"
-              class="input"
-              placeholder="••••••"
-              readonly
-            />
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="flex-grow space-y-4">
+      <table class="text-left w-full">
+        <tbody>
+          <tr>
+            <td class="table-cell-label">Login</td>
+            <td class="table-cell-input">
+              <input name="login" class="input" readonly />
+            </td>
+          </tr>
+          <tr>
+            <td class="table-cell-label">Email</td>
+            <td class="table-cell-input">
+              <input name="email" class="input" readonly />
+            </td>
+          </tr>
+          <tr>
+            <td class="table-cell-label">Password</td>
+            <td class="table-cell-input">
+              <input
+                name="password"
+                type="password"
+                class="input"
+                placeholder="••••••"
+                readonly
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-  <div class="flex gap-4">
-    <button id="edit-btn"   type="button" class="btn-primary w-24">Edit</button>
-    <button id="save-btn"   type="button" class="btn-primary w-24 hidden">Save</button>
-    <button id="cancel-btn" type="button" class="btn-secondary w-24 hidden">Cancel</button>
-  </div>
+      <div class="flex gap-4">
+        <button id="edit-btn"   type="button" class="btn-primary w-24">Edit</button>
+        <button id="save-btn"   type="button" class="btn-primary w-24 hidden">Save</button>
+        <button id="cancel-btn" type="button" class="btn-secondary w-24 hidden">Cancel</button>
+      </div>
 
-  <span id="status" class="text-sm text-gray-500"></span>
+      <span id="status" class="text-sm text-gray-500"></span>
+    </div>
+
+    <!-- Правая колонка: друзья -->
+    <div class="w-full md:w-1/3 border-l pl-6 space-y-4">
+      <h2 class="text-2xl font-semibold">Друзья</h2>
+
+      <div class="flex items-center gap-2">
+        <input
+          id="friend-id-input"
+          type="number"
+          placeholder="ID пользователя"
+          class="input flex-grow"
+        />
+        <button id="send-friend-btn" class="btn-primary">Добавить</button>
+      </div>
+
+      <div id="incoming-requests" class="space-y-2">
+        <h3 class="text-lg font-medium">Входящие запросы</h3>
+        <!-- JS-наполненные строки запросов -->
+      </div>
+
+      <div id="friends-list" class="space-y-2">
+        <h3 class="text-lg font-medium">Мои друзья</h3>
+        <!-- JS-наполненный список друзей -->
+      </div>
+    </div>
+  </div>
 </section>
 `;
 
