@@ -8,6 +8,7 @@ import fastifyMultipart from '@fastify/multipart';
 import { MatchmakingService } from './services/MatchmakingService';
 import { registerRoutes } from './utils/registerRoutes';
 import fastifyCors from '@fastify/cors';
+import fastifyStatic from '@fastify/static'; 
 
 // server init
 const fastify = Fastify(
@@ -24,7 +25,19 @@ const fastify = Fastify(
 fastify.register(fastifyCors, {
 	origin: ['http://localhost:5173'],
 	credentials: true,
-	methods: ['GET', 'POST', 'DELETE', 'OPTIONS']
+	methods: ['GET', 'POST', 'DELETE', 'OPTIONS', 'PUT']
+});
+
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../data'),
+  prefix: '/img/',
+  decorateReply: true,       // по умолчанию
+});
+
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../uploads'),
+  prefix: '/uploads/',
+  decorateReply: false,
 });
 
 fastify.register(fastifyCookie);

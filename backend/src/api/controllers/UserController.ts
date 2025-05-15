@@ -56,7 +56,7 @@ export class UserController {
 		}
 
 		//form file name
-		const fileName = '${userId}_${Date.now()}_${data.filename}';
+		const fileName = `${userId}_${Date.now()}_${data.filename}`;
 		const filePath = path.join(uploadDir, fileName);
 
 		//create stream for file upload
@@ -64,7 +64,7 @@ export class UserController {
 		await data.file.pipe(writeStream);
 
 		const updatedProfile = await this.userService
-			.updateProfile(userId, {avatarUrl: '/uploads/avatars/${fileName}'});
+			.updateProfile(userId, {avatarUrl: `/uploads/avatars/${fileName}`});
 		reply.send({ message: 'Avatar uploaded successfully', profile: updatedProfile});
 	}
 
