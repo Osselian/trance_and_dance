@@ -2,7 +2,7 @@ FROM prom/prometheus:v2.53.0
 
 WORKDIR /etc/prometheus
 
-#COPY configs/prometheus.yml .
+COPY configs/prometheus.yml .
 #COPY configs/prometheus_rules.yml .
 
 EXPOSE 9090

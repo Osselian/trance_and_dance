@@ -32,6 +32,20 @@ services:
       - monitoring-tier
     restart: always
 
+  node-exporter:
+    container_name: node-exporter
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    ports:
+      - "9100:9100"
+    volumes:
+      - /:/host:ro
+    command:
+      - '--path.rootfs=/host'
+    networks:
+      - monitoring-tier
+    restart: always
+      
+
 volumes:
   prometheus-data:
   grafana-data:
