@@ -45,14 +45,18 @@ export class AuthService{
 		let user = await this.userRepo.findByGoogleId(googleId);
 
 		if (!user) {
-			user = await this.userRepo.createWithGoogle({
-				googleId,
-				email,
-				username,
-				avatarUrl
-			});
+			user = await this.userRepo.findByEmail(email);
+			if (user){
+				user = await this.userRepo.updateUserProfile(user.id, { googleId});
+			}
+			else {
+				user = await this.userRepo.createWithGoogle({
+					googleId,
+					email,
+					username,
+					avatarUrl});
+			}
 		}
-
 		return user;
 	}
 }

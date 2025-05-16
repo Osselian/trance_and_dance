@@ -3,12 +3,17 @@ import { FriendshipRepository } from "../repositories/FriendshipRepository";
 import { UserProfileDTO } from "../dtos/UserProfileDTO";
 import bcrypt from 'bcryptjs'
 import { FriendshipStatus, Prisma } from "@prisma/client";
+import { getCallSites } from "util";
 
 const onlineUsers = new Set<number>();
 
 export class UserService {
 	private userRepo = new UserRepository();
 	private friendshipRepo = new FriendshipRepository();
+
+	async getAll(){
+		return this.userRepo.findAll();
+	}
 
 	async getProfile( userId: number){
 		return this.userRepo.findById(userId);

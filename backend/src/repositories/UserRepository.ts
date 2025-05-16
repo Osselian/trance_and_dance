@@ -3,6 +3,18 @@ import { PrismaClient, User } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export class UserRepository{
+
+	async findAll(){
+		return prisma.user.findMany({
+			// where: {online: true},
+			select: {
+				id: true,
+				username: true,
+				avatarUrl: true
+			}
+		});
+	}
+
 	async findByEmail(email: string){
 		return prisma.user.findUnique({where: { email } });
 	}
