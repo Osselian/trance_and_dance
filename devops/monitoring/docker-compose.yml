@@ -44,7 +44,41 @@ services:
     networks:
       - monitoring-tier
     restart: always
-      
+
+  cadvisor:
+    container_name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks:
+      - monitoring-tier
+    restart: always
+
+  nginx-exporter:
+    container_name: nginx-exporter
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    command:
+      - '--nginx.scrape-uri=http://nginx:8080/nginx_status'
+    ports:
+      - '9113:9113'
+    networks:
+      - monitoring-tier
+    restart: always
+
+  alertmanager:
+    container_name: alerting
+    image: prom/alertmanager:v0.26.0
+    ports:
+      - '9093:9093'
+    volumes:
+      - ./alertmanager/config.yml:/etc/alertmanager/alertmanager.yml
+    networks:
+      - monitoring-tier
+    restart: always
 
 volumes:
   prometheus-data:

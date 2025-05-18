@@ -1,0 +1,20 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: telegram
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 1h
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token: '8007512489:AAGx4QRSFQ-KuWw1EClakpgtMbu4uVg-C8k'
+        chat_id: 1382792490
+        parse_mode: 'Markdown'
+        message: |
+          🚨 *{{ .Status | toUpper }} alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Instance:* {{ .CommonLabels.instance }}
+          *Description:* {{ .CommonAnnotations.description }}
