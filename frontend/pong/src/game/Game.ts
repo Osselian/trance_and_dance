@@ -2,6 +2,8 @@ import { GameState, GameMode } from '../utils/types';
 import { Paddle } from './Paddle';
 import { Ball } from './Ball';
 import { Score } from './Score';
+import { startVsComputer, start1v1, startTournament }
+  from '../pong/gameLogic.js';
 
 export class Game {
   private canvas: HTMLCanvasElement;
@@ -24,7 +26,7 @@ export class Game {
   private lastFrameTime: number = 0;
   private targetPaddlePositions: { player: number; computer: number } | null = null;
 
-  constructor() {
+  constructor(mode?: GameMode) {
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.gameMessage = document.getElementById('gameMessage') as HTMLElement;
@@ -39,7 +41,10 @@ export class Game {
     this.computerPaddle = new Paddle(this.canvas.width - 60, false);
     this.ball = new Ball();
     this.score = new Score();
-    this.gameState = GameState.MODE_SELECTION;
+    this.gameMode = mode ?? null;
+    this.gameState = mode != null
+      ? GameState.START
+      : GameState.MODE_SELECTION;
 
     // Set up event listeners
     this.setupEventListeners();
@@ -48,20 +53,6 @@ export class Game {
   private setupEventListeners(): void {
     document.addEventListener('keydown', (e) => {
       switch (e.key) {
-        case '1':
-          if (this.gameState === GameState.MODE_SELECTION) {
-            this.gameMode = GameMode.VS_COMPUTER;
-            this.gameState = GameState.START;
-            this.hideMessage(); // Hide message element since we're drawing on canvas
-          }
-          break;
-        case '2':
-          if (this.gameState === GameState.MODE_SELECTION) {
-            this.gameMode = GameMode.VS_PLAYER;
-            this.gameState = GameState.START;
-            this.hideMessage(); // Hide message element since we're drawing on canvas
-          }
-          break;
         case 'ArrowUp':
         case 'w':
         case 'W':
@@ -213,8 +204,8 @@ export class Game {
       this.ctx.fillStyle = '#FFFFFF';
       this.ctx.fillText('Choose game mode:', this.canvas.width / 2, this.canvas.height / 2 - 50);
       this.ctx.font = '30px Arial';
-      this.ctx.fillText('Press 1 to play against computer', this.canvas.width / 2, this.canvas.height / 2 + 20);
-      this.ctx.fillText('Press 2 to play with a human player', this.canvas.width / 2, this.canvas.height / 2 + 60);
+      // this.ctx.fillText('Press 1 to play against computer', this.canvas.width / 2, this.canvas.height / 2 + 20);
+      // this.ctx.fillText('Press 2 to play with a human player', this.canvas.width / 2, this.canvas.height / 2 + 60);
     } else if (this.gameState === GameState.START) {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
