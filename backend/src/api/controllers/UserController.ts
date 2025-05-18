@@ -9,12 +9,18 @@ export class UserController {
 	constructor(private fastify: FastifyInstance){}
 
 	public registerRoutes(): void {
+		this.fastify.get('', this.getAll.bind(this));
 		this.fastify.get('/profile', this.getProfile.bind(this));
 		this.fastify.put('/profile', this.updateProfile.bind(this));
 		this.fastify.post('/avatar', this.uploadAvatar.bind(this));
 		this.fastify.post('/friend-request', this.sendFriendrequest.bind(this));
 		this.fastify.post('/friend-accept', this.acceptFriendrequest.bind(this));
 		this.fastify.get('/friends', this.gerFriends.bind(this));
+	}
+
+	async getAll(req: FastifyRequest, reply: FastifyReply){
+		const users = await this.userService.getAll();
+		reply.send(users);
 	}
 
 	async getProfile(req: FastifyRequest, reply: FastifyReply) {
