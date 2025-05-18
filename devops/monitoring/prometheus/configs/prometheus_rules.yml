@@ -1,6 +1,7 @@
 groups:
   - name: system_alerts
     rules:
+
       - alert: HighHostCPU
         expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
         for: 1m
@@ -17,14 +18,25 @@ groups:
           severity: warning
         annotations:
           summary: "Высокая загрузка CPU в контейнере"
-          description: "Контейнер {{ $labels.container }} использует более 80% CPU"
+          description: "Контейнер {{ $labels.name }} с image {{ $labels.image }} использует более 80% CPU"
 
       - alert: ContainerDown
-        expr: absent(container_last_seen{image!=""}) == 1
+        expr: up{job=~"cadvisor|node_exporter|grafana|nginx"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: "Контейнер пропал"
-          description: "Контейнер {{ $labels.container }} недоступен или остановлен"
+          description: "Контейнер {{ $labels.job }} недоступен по адресу {{ $labels.instance }}"
+
+      - alert: TestFakeDown
+        expr: vector(1)
+        for: 10s
+        labels:
+          severity: critical
+          job: fake_service
+          instance: fake:1234
+        annotations:
+          summary: "FAKE TEST ALERT"
+          description: "Это тестовый алерт, не паникуй!"
 

@@ -3,6 +3,7 @@ global:
 
 route:
   receiver: telegram
+  group_by: ['...']
   group_wait: 10s
   group_interval: 30s
   repeat_interval: 1h
@@ -12,9 +13,10 @@ receivers:
     telegram_configs:
       - bot_token: '8007512489:AAGx4QRSFQ-KuWw1EClakpgtMbu4uVg-C8k'
         chat_id: 1382792490
-        parse_mode: 'Markdown'
+        parse_mode: ''  # Отключаем Markdown
         message: |
-          🚨 *{{ .Status | toUpper }} alert:* {{ .CommonLabels.alertname }}
-          *Severity:* {{ .CommonLabels.severity }}
-          *Instance:* {{ .CommonLabels.instance }}
-          *Description:* {{ .CommonAnnotations.description }}
+          🚨 {{ .Status | toUpper }} ALERT: {{ .CommonLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+          Instance: {{ .CommonLabels.instance }}
+          Job: {{ .CommonLabels.job }}
+          Description: {{ .CommonAnnotations.description }}
