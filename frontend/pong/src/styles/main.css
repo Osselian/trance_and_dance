@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.game-container {
+  width: 800px;
+  height: 600px;
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  background-color: #1a1a1a;
+} 
