@@ -88,7 +88,7 @@ export class UserController {
 		reply.send(result);
 	}
 
-	async gerFriends(req: FastifyRequest, reply: FastifyReply) {
+	async getFriends(req: FastifyRequest, reply: FastifyReply) {
 		const userId = (req as any).user.id as number;
 		const friends = await this.userService.getFriends(userId);
 		reply.send(friends);
