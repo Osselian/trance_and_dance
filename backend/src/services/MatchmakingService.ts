@@ -52,6 +52,11 @@ export class MatchmakingService {
 		return match;
 	}
 
+	async userHasMatch(userId: number, matchId: number): Promise<boolean> {
+		const matches = await this.matchRepo.findByPlayerAndStatus(userId, MatchStatus.PENDING);
+		return matches.some(match => match.id === matchId);
+	}
+
 	private getPairs(requests: MatchMakingRequest[]): [MatchMakingRequest, MatchMakingRequest][] {
 		const result: [MatchMakingRequest, MatchMakingRequest][] = [];
 		const used = new Set<number>();
