@@ -15,7 +15,7 @@ export class UserController {
 		this.fastify.post('/avatar', this.uploadAvatar.bind(this));
 		this.fastify.post('/friend-request', this.sendFriendrequest.bind(this));
 		this.fastify.post('/friend-accept', this.acceptFriendrequest.bind(this));
-		this.fastify.get('/friends', this.gerFriends.bind(this));
+		this.fastify.get('/friends', this.getFriends.bind(this));
 	}
 
 	async getAll(req: FastifyRequest, reply: FastifyReply){
