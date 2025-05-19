@@ -21,13 +21,11 @@ export const homeView = `
 `;
 
 export function initHome() {
-  console.log('✅ initHome запущен');
   const btnVsCPU = document.getElementById('vs-computer');
-console.log('vs-computer element:', btnVsCPU);
-  const btn1v1 = document.getElementById('one-vs-one');
-  const btnTournament = document.getElementById('tournament');
+  const btn1v1  = document.getElementById('one-vs-one');
+  const btnT    = document.getElementById('tournament');
 
-  if (btnVsCPU) btnVsCPU.addEventListener('click', startVsComputer);
-  if (btn1v1) btn1v1.addEventListener('click', start1v1);
-  // if (btnTournament) btnTournament.addEventListener('click', startTournament);
+  btnVsCPU?.addEventListener('click', () => location.hash = '#/play/cpu');
+  btn1v1?.addEventListener('click', () => location.hash = '#/play/1v1');
+  btnT?.addEventListener('click',   () => location.hash = '#/play/tournament');
 }

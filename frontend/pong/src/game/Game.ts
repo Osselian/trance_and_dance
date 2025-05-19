@@ -50,66 +50,118 @@ export class Game {
     this.setupEventListeners();
   }
 
-  private setupEventListeners(): void {
-    document.addEventListener('keydown', (e) => {
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          if (this.gameState === GameState.PLAYING) {
-            this.playerPaddle.move('up', this.canvas.height);
-          }
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          if (this.gameState === GameState.PLAYING) {
-            this.playerPaddle.move('down', this.canvas.height);
-          }
-          break;
-        case 'o':
-        case 'O':
-          if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
-            this.computerPaddle.move('up', this.canvas.height);
-          }
-          break;
-        case 'l':
-        case 'L':
-          if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
-            this.computerPaddle.move('down', this.canvas.height);
-          }
-          break;
-        case ' ':
-          if (this.gameState === GameState.START || 
-              this.gameState === GameState.PAUSED || 
-              this.gameState === GameState.GAME_OVER) {
-            this.startGame();
-          } else if (this.gameState === GameState.PLAYING) {
-            this.pauseGame();
-          }
-          break;
-        case 'Escape':
-          this.resetGame();
-          break;
+private setupEventListeners(): void {
+  document.addEventListener('keydown', (e) => {
+    // только когда игра идёт
+    if (this.gameState !== GameState.PLAYING) {
+      // запуск/пауза/рестарт
+      if (e.code === 'Space') {
+        if (this.gameState === GameState.START
+          || this.gameState === GameState.PAUSED
+          || this.gameState === GameState.GAME_OVER) {
+          this.startGame();
+        } else {
+          this.pauseGame();
+        }
       }
-    });
-
-    document.addEventListener('keyup', (e) => {
-      if (this.gameState !== GameState.PLAYING) return;
-
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
-          e.key === 'w' || e.key === 'W' || 
-          e.key === 's' || e.key === 'S') {
-        this.playerPaddle.stop();
+      if (e.code === 'Escape') {
+        this.resetGame();
       }
+      return;
+    }
+
+    // управление первой ракеткой
+    if (['ArrowUp', 'KeyW'].includes(e.code)) {
+      this.playerPaddle.move('up', this.canvas.height);
+    } else if (['ArrowDown', 'KeyS'].includes(e.code)) {
+      this.playerPaddle.move('down', this.canvas.height);
+    }
+
+    // управление второй (в режиме VS_PLAYER)
+    if (this.gameMode === GameMode.VS_PLAYER) {
+      if (e.code === 'KeyO') {
+        this.computerPaddle.move('up', this.canvas.height);
+      } else if (e.code === 'KeyL') {
+        this.computerPaddle.move('down', this.canvas.height);
+      }
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (this.gameState !== GameState.PLAYING) return;
+
+    // остановка первой ракетки
+    if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) {
+      this.playerPaddle.stop();
+    }
+    // остановка второй (только в VS_PLAYER)
+    if (this.gameMode === GameMode.VS_PLAYER
+      && ['KeyO', 'KeyL'].includes(e.code)) {
+      this.computerPaddle.stop();
+    }
+  });
+}
+
+  // private setupEventListeners(): void {
+  //   document.addEventListener('keydown', (e) => {
+  //     switch (e.key) {
+  //       case 'ArrowUp':
+  //       case 'w':
+  //       case 'W':
+  //         if (this.gameState === GameState.PLAYING) {
+  //           this.playerPaddle.move('up', this.canvas.height);
+  //         }
+  //         break;
+  //       case 'ArrowDown':
+  //       case 's':
+  //       case 'S':
+  //         if (this.gameState === GameState.PLAYING) {
+  //           this.playerPaddle.move('down', this.canvas.height);
+  //         }
+  //         break;
+  //       case 'o':
+  //       case 'O':
+  //         if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
+  //           this.computerPaddle.move('up', this.canvas.height);
+  //         }
+  //         break;
+  //       case 'l':
+  //       case 'L':
+  //         if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
+  //           this.computerPaddle.move('down', this.canvas.height);
+  //         }
+  //         break;
+  //       case ' ':
+  //         if (this.gameState === GameState.START || 
+  //             this.gameState === GameState.PAUSED || 
+  //             this.gameState === GameState.GAME_OVER) {
+  //           this.startGame();
+  //         } else if (this.gameState === GameState.PLAYING) {
+  //           this.pauseGame();
+  //         }
+  //         break;
+  //       case 'Escape':
+  //         this.resetGame();
+  //         break;
+  //     }
+  //   });
+
+  //   document.addEventListener('keyup', (e) => {
+  //     if (this.gameState !== GameState.PLAYING) return;
+
+  //     if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+  //         e.key === 'w' || e.key === 'W' || 
+  //         e.key === 's' || e.key === 'S') {
+  //       this.playerPaddle.stop();
+  //     }
       
-      if (this.gameMode === GameMode.VS_PLAYER && 
-          (e.key === 'o' || e.key === 'O' || 
-           e.key === 'l' || e.key === 'L')) {
-        this.computerPaddle.stop();
-      }
-    });
-  }
+  //     if (this.gameMode === GameMode.VS_PLAYER && 
+  //         (e.key === 'o' || e.key === 'O' || 
+  //          e.key === 'l' || e.key === 'L')) {
+  //       this.computerPaddle.stop();
+  //     }
+  //   });
+  // }
 
   public start(): void {
     this.hideMessage(); // Hide the message element since we're drawing on canvas
