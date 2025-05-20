@@ -20,3 +20,5 @@ COPY --from=build /app/admin/dist ./dist
 EXPOSE 443
 
 CMD [ "npx", "serve", "-s", "dist", "-l", "443", "--ssl-cert", "/app/admin/certs/cert.pem", "--ssl-key",  "/app/admin/certs/key.pem" ]
+
+#ялох
