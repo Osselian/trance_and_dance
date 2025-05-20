@@ -4,17 +4,17 @@ export function renderNavbar() {
   const token  = localStorage.getItem('token');
 
   if (token) {
-    // пользователь залогинен
     header.innerHTML = `
       <nav class="flex items-center justify-between p-4 bg-gray-800 text-white">
         <a href="#/" class="text-xl font-bold">PONG</a>
         <div class="space-x-4">
           <a href="#/profile" class="hover:text-teal-400">Profile</a>
+          <a href="#/friends" class="hover:text-teal-400">Friends</a>
+          <a href="#/chat"    class="hover:text-teal-400">Chat</a>
           <button id="logout-btn" class="hover:text-red-400">Logout</button>
         </div>
       </nav>
     `;
-    // вешаем слушатель только когда кнопка реально есть
     document.getElementById('logout-btn')!.addEventListener('click', () => {
       localStorage.removeItem('token');
       window.dispatchEvent(new Event('auth-changed'));
@@ -22,7 +22,6 @@ export function renderNavbar() {
     });
 
   } else {
-    // пользователь не залогинен
     header.innerHTML = `
       <nav class="flex items-center justify-between p-4 bg-gray-800 text-white">
         <a href="#/" class="text-xl font-bold">PONG</a>
