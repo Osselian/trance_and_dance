@@ -23,7 +23,7 @@ const fastify = Fastify(
 ).withTypeProvider<TypeBoxTypeProvider>();
 
 fastify.register(fastifyCors, {
-	origin: ['https://localhost:8080', 'https://localhost:8081'],
+	origin: ['http://localhost:5173'],
 	credentials: true,
 	methods: ['GET', 'POST', 'DELETE', 'OPTIONS', 'PUT']
 });
