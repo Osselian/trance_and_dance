@@ -4,7 +4,7 @@ services:
   prometheus:
     container_name: prometheus
     build:
-      context: ./prometheus
+      context: ./devops/monitoring/prometheus
       dockerfile: Dockerfile
     volumes:
       - prometheus-data:/prometheus
@@ -17,13 +17,15 @@ services:
   grafana:
     container_name: grafana
     build:
-      context: ./grafana
+      context: ./devops/monitoring/grafana 
       dockerfile: Dockerfile
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_USERS_DEFAULT_THEME=light
       - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_METRICS_ENABLED=true
+      - GF_METRICS_ENDPOINT=/metrics  
     volumes:
       - grafana-data:/var/lib/grafana
     ports:
@@ -58,24 +60,15 @@ services:
       - monitoring-tier
     restart: always
 
-  nginx-exporter:
-    container_name: nginx-exporter
-    image: nginx/nginx-prometheus-exporter:1.1.0
-    command:
-      - '--nginx.scrape-uri=http://nginx:8080/nginx_status'
-    ports:
-      - '9113:9113'
-    networks:
-      - monitoring-tier
-    restart: always
-
   alertmanager:
     container_name: alerting
-    image: prom/alertmanager:v0.26.0
+    build:
+      context: ./devops/monitoring/alertmanager
+      dockerfile: Dockerfile
     ports:
       - '9093:9093'
-    volumes:
-      - ./alertmanager/config.yml:/etc/alertmanager/alertmanager.yml
+    env_file:
+      - .env
     networks:
       - monitoring-tier
     restart: always

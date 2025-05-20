@@ -11,9 +11,9 @@ route:
 receivers:
   - name: telegram
     telegram_configs:
-      - bot_token: '8007512489:AAGx4QRSFQ-KuWw1EClakpgtMbu4uVg-C8k'
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
         chat_id: 1382792490
-        parse_mode: ''  # Отключаем Markdown
+        parse_mode: ''
         message: |
           🚨 {{ .Status | toUpper }} ALERT: {{ .CommonLabels.alertname }}
           Severity: {{ .CommonLabels.severity }}
