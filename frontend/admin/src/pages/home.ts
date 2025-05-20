@@ -1,4 +1,3 @@
-import { startVsComputer, start1v1  } from '../../../pong/src/game/gameLogic.js';
 
 export const homeView = `
 <section class="relative w-full h-[calc(100vh-3.6rem)] overflow-hidden">

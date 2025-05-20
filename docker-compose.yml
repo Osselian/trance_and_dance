@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/certs:/app/certs
+    ports:
+      - "3000:3000"
+
+  admin-frontend:
+    build:
+      context: ./frontend
+      dockerfile: admin/Dockerfile
+    container_name: frontend-admin
+    env_file:
+      - ./frontend/admin/.env
+    volumes:
+      - ./frontend/admin/certs:/app/admin/certs
+    ports:
+      - "8080:443"
+    depends_on:
+      - backend
+    environment:
+      - API_URL=http://backend:3000
+
+  pong-frontend:
+    build:
+      context: ./frontend/pong
+      dockerfile: Dockerfile
+    container_name: frontend-pong
+    volumes:
+      - ./frontend/pong/certs:/app/certs
+    ports:
+      - "8081:443"
+    depends_on:
+      - backend
+    environment:
+      - API_URL=http://backend:3000

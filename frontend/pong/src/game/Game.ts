@@ -2,8 +2,6 @@ import { GameState, GameMode } from '../utils/types';
 import { Paddle } from './Paddle';
 import { Ball } from './Ball';
 import { Score } from './Score';
-import { startVsComputer, start1v1, startTournament }
-  from '../pong/gameLogic.js';
 
 export class Game {
   private canvas: HTMLCanvasElement;
