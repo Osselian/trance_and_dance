@@ -9,12 +9,18 @@ export class UserController {
 	constructor(private fastify: FastifyInstance){}
 
 	public registerRoutes(): void {
+		this.fastify.get('', this.getAll.bind(this));
 		this.fastify.get('/profile', this.getProfile.bind(this));
 		this.fastify.put('/profile', this.updateProfile.bind(this));
 		this.fastify.post('/avatar', this.uploadAvatar.bind(this));
 		this.fastify.post('/friend-request', this.sendFriendrequest.bind(this));
 		this.fastify.post('/friend-accept', this.acceptFriendrequest.bind(this));
 		this.fastify.get('/friends', this.gerFriends.bind(this));
+	}
+
+	async getAll(req: FastifyRequest, reply: FastifyReply){
+		const users = await this.userService.getAll();
+		reply.send(users);
 	}
 
 	async getProfile(req: FastifyRequest, reply: FastifyReply) {
@@ -56,7 +62,7 @@ export class UserController {
 		}
 
 		//form file name
-		const fileName = '${userId}_${Date.now()}_${data.filename}';
+		const fileName = `${userId}_${Date.now()}_${data.filename}`;
 		const filePath = path.join(uploadDir, fileName);
 
 		//create stream for file upload
@@ -64,7 +70,7 @@ export class UserController {
 		await data.file.pipe(writeStream);
 
 		const updatedProfile = await this.userService
-			.updateProfile(userId, {avatarUrl: '/uploads/avatars/${fileName}'});
+			.updateProfile(userId, {avatarUrl: `/uploads/avatars/${fileName}`});
 		reply.send({ message: 'Avatar uploaded successfully', profile: updatedProfile});
 	}
 

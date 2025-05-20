@@ -9,6 +9,8 @@ import { TournamentParticipantController } from "../api/controllers/TournamentPa
 import { BlockController } from "../api/controllers/BlockController";
 import { ChatController } from "../api/controllers/ChatController";
 import { InvitationController } from "../api/controllers/InvitationController";
+import { MatchWebSocketController } from "../api/controllers/MatchWebcosketController";
+import { MatchWebSocketService } from "../services/MatchWebsocketService";
 
 type ControllerConstructor = new (app: FastifyInstance) => any;
 
@@ -52,6 +54,10 @@ export function registerRoutes(fastify: FastifyInstance) {
 		const mmCtrl = new TournamentParticipantController(app);
 		mmCtrl.registerRoutes();
 	}, { prefix: '/tournament' });
+
+	const matchWebSocketController = new MatchWebSocketController(
+		fastify, new MatchWebSocketService());
+	matchWebSocketController.registerRoutes();
 }
 
 function registerSecure(

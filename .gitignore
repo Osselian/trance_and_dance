@@ -1,1 +1,30 @@
-.env
+backend/certs/
+frontend/admin/certs/
+frontend/pong/certs/
+*.pem
+
+# логи
+*.log
+
+# node_modules
+**/node_modules/
+
+# папки со сборками / артефактами
+**/dist/
+**/build/
+
+# файлы окружения
+**/.env
+
+# папки с загруженными файлами
+backend/uploads/
+
+# Vite / временные файлы
+.vite/
+.cache/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
