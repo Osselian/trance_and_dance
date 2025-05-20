@@ -15,9 +15,7 @@ export class UserController {
 		this.fastify.post('/avatar', this.uploadAvatar.bind(this));
 		this.fastify.post('/friend-request', this.sendFriendrequest.bind(this));
 		this.fastify.post('/friend-accept', this.acceptFriendrequest.bind(this));
-		this.fastify.get('/friends', this.getFriends.bind(this));
-		this.fastify.get('/friend-requests', this.getIncomingRequests.bind(this)
-);
+		this.fastify.get('/friends', this.gerFriends.bind(this));
 	}
 
 	async getAll(req: FastifyRequest, reply: FastifyReply){
@@ -90,18 +88,9 @@ export class UserController {
 		reply.send(result);
 	}
 
-	async getFriends(req: FastifyRequest, reply: FastifyReply) {
+	async gerFriends(req: FastifyRequest, reply: FastifyReply) {
 		const userId = (req as any).user.id as number;
 		const friends = await this.userService.getFriends(userId);
 		reply.send(friends);
-	}
-
-	public async getIncomingRequests(
-		req: FastifyRequest,
-		reply: FastifyReply
-	) {
-		const userId = (req as any).user.id as number;
-		const incoming = await this.userService.getIncomingRequests(userId);
-		reply.send(incoming);
 	}
 }

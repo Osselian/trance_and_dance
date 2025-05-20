@@ -3,6 +3,7 @@ export const profileView = `
   <h1 class="text-3xl font-semibold mb-4">My profile</h1>
 
   <div class="flex flex-col md:flex-row items-start gap-8">
+    <!-- Левая колонка: аватар + данные профиля -->
     <div class="flex-shrink-0">
       <div class="relative w-24 h-24 rounded-full overflow-hidden border">
         <img
@@ -58,6 +59,31 @@ export const profileView = `
 
       <span id="status" class="text-sm text-gray-500"></span>
     </div>
+
+    <!-- Правая колонка: друзья -->
+    <div class="w-full md:w-1/3 border-l pl-6 space-y-4">
+      <h2 class="text-2xl font-semibold">Друзья</h2>
+
+      <div class="flex items-center gap-2">
+        <input
+          id="friend-id-input"
+          type="number"
+          placeholder="ID пользователя"
+          class="input flex-grow"
+        />
+        <button id="send-friend-btn" class="btn-primary">Добавить</button>
+      </div>
+
+      <div id="incoming-requests" class="space-y-2">
+        <h3 class="text-lg font-medium">Входящие запросы</h3>
+        <!-- JS-наполненные строки запросов -->
+      </div>
+
+      <div id="friends-list" class="space-y-2">
+        <h3 class="text-lg font-medium">Мои друзья</h3>
+        <!-- JS-наполненный список друзей -->
+      </div>
+    </div>
   </div>
 </section>
 `;
@@ -68,6 +94,7 @@ import { BASE } from '../api/auth'
 
 export async function profileInit() {
 
+  /* --- берём ссылки на DOM-элементы после того, как шаблон уже вставлен --- */
   const loginEl  = document.querySelector<HTMLInputElement>('input[name="login"]')!
   const emailEl  = document.querySelector<HTMLInputElement>('input[name="email"]')!
   const passEl   = document.querySelector<HTMLInputElement>('input[name="password"]')!
@@ -161,6 +188,7 @@ export async function profileInit() {
     }
   });
 
+  // —————— Инициализация ——————
   try {
     await loadProfile();
     setEditing(false);
