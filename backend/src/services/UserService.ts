@@ -1,7 +1,6 @@
 import { UserRepository } from "../repositories/UserRepository";
 import { FriendshipRepository } from "../repositories/FriendshipRepository";
 import { UserProfileDTO } from "../dtos/UserProfileDTO";
-import { IncomingRequest } from "../dtos/IncomingRequestDto";
 import bcrypt from 'bcryptjs'
 import { FriendshipStatus, Prisma } from "@prisma/client";
 import { getCallSites } from "util";
@@ -95,15 +94,4 @@ export class UserService {
 			};
 		});
 	}
-
-  async getIncomingRequests(userId: number): Promise<IncomingRequest[]> {
-    const rows = await this.friendshipRepo.findIncomingRequests(userId);
-    return rows.map(r => ({
-      requester: {
-        id:        r.requester.id,
-        username:  r.requester.username,
-        avatarUrl: r.requester.avatarUrl,
-      }
-    }));
-  }
 }
