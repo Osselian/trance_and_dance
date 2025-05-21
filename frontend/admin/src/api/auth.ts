@@ -1,4 +1,5 @@
 export const BASE = import.meta.env.VITE_API_URL ?? 'https://localhost:3000'
+import type { User } from './friends';
 
 export interface LoginData {
   email: string;
@@ -11,7 +12,7 @@ export interface RegisterData {
   password: string;
 }
 
-export interface Profile {
+export interface Profile extends User{
   username: string;
   email:    string;
   avatarUrl:string;
@@ -36,7 +37,7 @@ async function post<T>(endpoint: string, body?: unknown): Promise<T> {
   return resp.json()
 }
 
-function authHeaders() {
+function authHeaders(): Record<string,string> {
   const token = localStorage.getItem('token')
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
@@ -115,3 +116,4 @@ export const AuthAPI = {
         })
       }
 }
+
