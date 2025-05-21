@@ -50,7 +50,7 @@ services:
     volumes:
       - prometheus-data:/prometheus
     ports:
-      - "9090:9090"
+      - "9200:9090"
     networks:
       - monitoring-tier
     restart: always
@@ -70,7 +70,7 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     ports:
-      - "3000:3000"
+      - "9201:3000"
     networks:
       - monitoring-tier
     restart: always
@@ -79,7 +79,7 @@ services:
     container_name: node-exporter
     image: quay.io/prometheus/node-exporter:v1.8.2
     ports:
-      - "9100:9100"
+      - "9203:9100"
     volumes:
       - /:/host:ro
     command:
@@ -92,7 +92,7 @@ services:
     container_name: cadvisor
     image: gcr.io/cadvisor/cadvisor:v0.47.2
     ports:
-      - "8080:8080"
+      - "9204:8080"
     volumes:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
@@ -107,7 +107,7 @@ services:
       context: ./devops/monitoring/alertmanager
       dockerfile: Dockerfile
     ports:
-      - '9093:9093'
+      - '9202:9093'
     env_file:
       - .env
     networks:
@@ -120,5 +120,3 @@ volumes:
 
 networks:
   monitoring-tier:
-
-
