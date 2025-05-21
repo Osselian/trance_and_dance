@@ -13,18 +13,24 @@ export interface Velocity {
   y: number;
 }
 
-export enum GameState {
-  MODE_SELECTION = 'modeSelection',
-  START = 'start',
-  PLAYING = 'playing',
-  PAUSED = 'paused',
-  GAME_OVER = 'gameOver'
-}
+export const GameState = {
+  MODE_SELECTION: 'modeSelection',
+  START:           'start',
+  PLAYING:         'playing',
+  PAUSED:          'paused',
+  GAME_OVER:       'gameOver',
+} as const
 
-export enum GameMode {
-  VS_COMPUTER = 'vsComputer',
-  VS_PLAYER = 'vsPlayer'
-}
+// 2) Тип-унития, равная всем значениям этого объекта
+export type GameState = typeof GameState[keyof typeof GameState]
+
+// Повторяем для GameMode
+export const GameMode = {
+  VS_COMPUTER: 'vsComputer',
+  VS_PLAYER:   'vsPlayer',
+} as const
+
+export type GameMode = typeof GameMode[keyof typeof GameMode]
 
 export interface GameScore {
   player: number;
