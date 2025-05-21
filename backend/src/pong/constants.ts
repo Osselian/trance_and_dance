@@ -7,10 +7,14 @@ export const INITIAL_BALL_SPEED = 480;
 export const BALL_SPEED_INCREMENT = 20;
 export const MAX_BALL_SPEED = 2000;
 export const SCORE_TO_WIN = 5;
+export const canvasWidth = 800;
+export const canvasHeight = 600;
+export const deltaTime = 0.05;
 
 export const COLORS = {
   PADDLE: '#FFFFFF',
   BALL: '#FFFFFF',
   BACKGROUND: '#1A1A1A',
   TEXT: '#FFFFFF'
-} as const; 
+} as const;
+

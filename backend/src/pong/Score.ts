@@ -2,11 +2,9 @@ import { GameScore } from './types';
 import { SCORE_TO_WIN } from './constants';
 
 export class Score {
-  private score: GameScore;
+  private score: { player: number; opponent: number } = { player: 0, opponent: 0 }; // Initialize with default values
 
-  constructor() {
-    this.score = { player: 0, opponent: 0 };
-  }
+  constructor() {}
 
   public incrementPlayer(): void {
     this.score.player++;
@@ -16,12 +14,8 @@ export class Score {
     this.score.opponent++;
   }
 
-  public reset(): void {
-    this.score = { player: 0, opponent: 0 };
-  }
-
-  public getScore(): GameScore {
-    return { ...this.score };
+  public getScore(): { player: number; opponent: number } {
+    return this.score;
   }
 
   public hasWinner(): boolean {
@@ -33,4 +27,8 @@ export class Score {
     if (this.score.opponent >= SCORE_TO_WIN) return 'computer';
     return null;
   }
-} 
+
+  public getState(): GameScore {
+    return { ...this.score };
+  }
+}

@@ -19,8 +19,8 @@ export class MatchWebSocketService {
 	{
 		try {
 			//извлечение токена из запроса
-			const host = Array.isArray(rawHeaders.host) 
-				? rawHeaders.host[0] 
+			const host = Array.isArray(rawHeaders.host)
+				? rawHeaders.host[0]
 				: rawHeaders.host;
 
 			const url = new URL(rawRequestUrl, `https://${host}`);
@@ -69,7 +69,7 @@ export class MatchWebSocketService {
 			}
 
 			// Обработчик входящих сообщений
-			typedSocket.on('messsage', (rawMessage: string) => {
+			typedSocket.on('message', (rawMessage: string) => {
 				this.handleIncomingMessage(typedSocket, rawMessage);
 			});
 
@@ -77,7 +77,7 @@ export class MatchWebSocketService {
 			typedSocket.on('close', () => {
 				this.removeFromRoom(typedSocket);
 			});
-		} 
+		}
 		catch {
 			socket.close(1011, 'Unexpected error');
 		}
@@ -95,7 +95,7 @@ export class MatchWebSocketService {
 		if (!room) return;
 
 		const game = this.games.get(socket.matchId);
-		if (!game) 
+		if (!game)
 			return;
 		game.handleClientMessage(socket.userId, msg);
 	}
