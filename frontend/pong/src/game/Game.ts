@@ -24,7 +24,7 @@ export class Game {
   private lastFrameTime: number = 0;
   private targetPaddlePositions: { player: number; computer: number } | null = null;
 
-  constructor() {
+  constructor(mode?: GameMode) {
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.gameMessage = document.getElementById('gameMessage') as HTMLElement;
@@ -39,86 +39,127 @@ export class Game {
     this.computerPaddle = new Paddle(this.canvas.width - 60, false);
     this.ball = new Ball();
     this.score = new Score();
-    this.gameState = GameState.MODE_SELECTION;
+    this.gameMode = mode ?? null;
+    this.gameState = mode != null
+      ? GameState.START
+      : GameState.MODE_SELECTION;
 
     // Set up event listeners
     this.setupEventListeners();
   }
 
-  private setupEventListeners(): void {
-    document.addEventListener('keydown', (e) => {
-      switch (e.key) {
-        case '1':
-          if (this.gameState === GameState.MODE_SELECTION) {
-            this.gameMode = GameMode.VS_COMPUTER;
-            this.gameState = GameState.START;
-            this.hideMessage(); // Hide message element since we're drawing on canvas
-          }
-          break;
-        case '2':
-          if (this.gameState === GameState.MODE_SELECTION) {
-            this.gameMode = GameMode.VS_PLAYER;
-            this.gameState = GameState.START;
-            this.hideMessage(); // Hide message element since we're drawing on canvas
-          }
-          break;
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          if (this.gameState === GameState.PLAYING) {
-            this.playerPaddle.move('up', this.canvas.height);
-          }
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          if (this.gameState === GameState.PLAYING) {
-            this.playerPaddle.move('down', this.canvas.height);
-          }
-          break;
-        case 'o':
-        case 'O':
-          if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
-            this.computerPaddle.move('up', this.canvas.height);
-          }
-          break;
-        case 'l':
-        case 'L':
-          if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
-            this.computerPaddle.move('down', this.canvas.height);
-          }
-          break;
-        case ' ':
-          if (this.gameState === GameState.START || 
-              this.gameState === GameState.PAUSED || 
-              this.gameState === GameState.GAME_OVER) {
-            this.startGame();
-          } else if (this.gameState === GameState.PLAYING) {
-            this.pauseGame();
-          }
-          break;
-        case 'Escape':
-          this.resetGame();
-          break;
+private setupEventListeners(): void {
+  document.addEventListener('keydown', (e) => {
+    // только когда игра идёт
+    if (this.gameState !== GameState.PLAYING) {
+      // запуск/пауза/рестарт
+      if (e.code === 'Space') {
+        if (this.gameState === GameState.START
+          || this.gameState === GameState.PAUSED
+          || this.gameState === GameState.GAME_OVER) {
+          this.startGame();
+        } else {
+          this.pauseGame();
+        }
       }
-    });
-
-    document.addEventListener('keyup', (e) => {
-      if (this.gameState !== GameState.PLAYING) return;
-
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
-          e.key === 'w' || e.key === 'W' || 
-          e.key === 's' || e.key === 'S') {
-        this.playerPaddle.stop();
+      if (e.code === 'Escape') {
+        this.resetGame();
       }
+      return;
+    }
+
+    // управление первой ракеткой
+    if (['ArrowUp', 'KeyW'].includes(e.code)) {
+      this.playerPaddle.move('up', this.canvas.height);
+    } else if (['ArrowDown', 'KeyS'].includes(e.code)) {
+      this.playerPaddle.move('down', this.canvas.height);
+    }
+
+    // управление второй (в режиме VS_PLAYER)
+    if (this.gameMode === GameMode.VS_PLAYER) {
+      if (e.code === 'KeyO') {
+        this.computerPaddle.move('up', this.canvas.height);
+      } else if (e.code === 'KeyL') {
+        this.computerPaddle.move('down', this.canvas.height);
+      }
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (this.gameState !== GameState.PLAYING) return;
+
+    // остановка первой ракетки
+    if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) {
+      this.playerPaddle.stop();
+    }
+    // остановка второй (только в VS_PLAYER)
+    if (this.gameMode === GameMode.VS_PLAYER
+      && ['KeyO', 'KeyL'].includes(e.code)) {
+      this.computerPaddle.stop();
+    }
+  });
+}
+
+  // private setupEventListeners(): void {
+  //   document.addEventListener('keydown', (e) => {
+  //     switch (e.key) {
+  //       case 'ArrowUp':
+  //       case 'w':
+  //       case 'W':
+  //         if (this.gameState === GameState.PLAYING) {
+  //           this.playerPaddle.move('up', this.canvas.height);
+  //         }
+  //         break;
+  //       case 'ArrowDown':
+  //       case 's':
+  //       case 'S':
+  //         if (this.gameState === GameState.PLAYING) {
+  //           this.playerPaddle.move('down', this.canvas.height);
+  //         }
+  //         break;
+  //       case 'o':
+  //       case 'O':
+  //         if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
+  //           this.computerPaddle.move('up', this.canvas.height);
+  //         }
+  //         break;
+  //       case 'l':
+  //       case 'L':
+  //         if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
+  //           this.computerPaddle.move('down', this.canvas.height);
+  //         }
+  //         break;
+  //       case ' ':
+  //         if (this.gameState === GameState.START || 
+  //             this.gameState === GameState.PAUSED || 
+  //             this.gameState === GameState.GAME_OVER) {
+  //           this.startGame();
+  //         } else if (this.gameState === GameState.PLAYING) {
+  //           this.pauseGame();
+  //         }
+  //         break;
+  //       case 'Escape':
+  //         this.resetGame();
+  //         break;
+  //     }
+  //   });
+
+  //   document.addEventListener('keyup', (e) => {
+  //     if (this.gameState !== GameState.PLAYING) return;
+
+  //     if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+  //         e.key === 'w' || e.key === 'W' || 
+  //         e.key === 's' || e.key === 'S') {
+  //       this.playerPaddle.stop();
+  //     }
       
-      if (this.gameMode === GameMode.VS_PLAYER && 
-          (e.key === 'o' || e.key === 'O' || 
-           e.key === 'l' || e.key === 'L')) {
-        this.computerPaddle.stop();
-      }
-    });
-  }
+  //     if (this.gameMode === GameMode.VS_PLAYER && 
+  //         (e.key === 'o' || e.key === 'O' || 
+  //          e.key === 'l' || e.key === 'L')) {
+  //       this.computerPaddle.stop();
+  //     }
+  //   });
+  // }
 
   public start(): void {
     this.hideMessage(); // Hide the message element since we're drawing on canvas
@@ -213,8 +254,8 @@ export class Game {
       this.ctx.fillStyle = '#FFFFFF';
       this.ctx.fillText('Choose game mode:', this.canvas.width / 2, this.canvas.height / 2 - 50);
       this.ctx.font = '30px Arial';
-      this.ctx.fillText('Press 1 to play against computer', this.canvas.width / 2, this.canvas.height / 2 + 20);
-      this.ctx.fillText('Press 2 to play with a human player', this.canvas.width / 2, this.canvas.height / 2 + 60);
+      // this.ctx.fillText('Press 1 to play against computer', this.canvas.width / 2, this.canvas.height / 2 + 20);
+      // this.ctx.fillText('Press 2 to play with a human player', this.canvas.width / 2, this.canvas.height / 2 + 60);
     } else if (this.gameState === GameState.START) {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';

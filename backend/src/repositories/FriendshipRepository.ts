@@ -52,4 +52,13 @@ export class FriendshipRepository {
 		});
 	}
 
+  async findIncomingRequests(userId: number) {
+    return prisma.friendship.findMany({
+      where: {
+        receiverId: userId,
+        status:     FriendshipStatus.PENDING
+      },
+      include: { requester: true }
+    });
+  }
 }
