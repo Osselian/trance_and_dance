@@ -65,21 +65,44 @@ export class GameService {
 	private checkCollisions(): void {
 		const ballPos = this.ball.getPosition();
 		const ballSize = this.ball.getSize();
+		const ballVel = this.ball.getVelocity();
 
+		// Check paddle collisions
 		[this.playerPaddle, this.opponentPaddle].forEach((paddle) => {
 			const paddlePos = paddle.getPosition();
 			const paddleSize = paddle.getSize();
 
+			// Check if ball is colliding with paddle
 			if (
-				ballPos.x + ballSize / 2 > paddlePos.x &&
-				ballPos.x - ballSize / 2 < paddlePos.x + paddleSize.width &&
-				ballPos.y + ballSize / 2 > paddlePos.y &&
-				ballPos.y - ballSize / 2 < paddlePos.y + paddleSize.height
+				ballPos.x + ballSize / 2 >= paddlePos.x &&
+				ballPos.x - ballSize / 2 <= paddlePos.x + paddleSize.width &&
+				ballPos.y + ballSize / 2 >= paddlePos.y &&
+				ballPos.y - ballSize / 2 <= paddlePos.y + paddleSize.height
 			) {
-				this.ball.reverseX();
-				const relativeY = 
-					(ballPos.y - (paddlePos.y + paddleSize.height / 2)) / (paddleSize.height / 2);
-				this.ball.setVelocityY(relativeY * this.ball.getCurrentSpeed());
+				// Determine which part of the paddle was hit
+				const isPlayerPaddle = paddle.isPlayerPaddle();
+				const paddleCenterX = isPlayerPaddle ? paddlePos.x + paddleSize.width : paddlePos.x;
+				const paddleCenterY = paddlePos.y + paddleSize.height / 2;
+
+				// Calculate relative position of ball to paddle center
+				const relativeY = (ballPos.y - paddleCenterY) / (paddleSize.height / 2);
+
+				// Check if ball hit the side of the paddle
+				const hitSide = isPlayerPaddle
+					? ballPos.x + ballSize / 2 <= paddlePos.x + paddleSize.width / 4
+					: ballPos.x - ballSize / 2 >= paddlePos.x + (paddleSize.width * 3) / 4;
+
+				if (hitSide) {
+					// Side hit - ball bounces off the side wall
+					this.ball.reverseX();
+					// Add some vertical velocity based on where it hit the paddle
+					this.ball.setVelocityY(relativeY * this.ball.getCurrentSpeed());
+				} else {
+					// Front hit - normal paddle hit
+					this.ball.reverseX();
+					// Add some vertical velocity based on where it hit the paddle
+					this.ball.setVelocityY(relativeY * this.ball.getCurrentSpeed());
+				}
 			}
 		});
 	}
@@ -87,7 +110,7 @@ export class GameService {
 	private checkScore(): void {
 		const ballPos = this.ball.getPosition();
 		const ballSize = this.ball.getSize();
-		
+
 		if (ballPos.x - ballSize / 2 <= 0) {
 			this.score.incrementOpponent();
 			this.resetBall();
@@ -96,7 +119,7 @@ export class GameService {
 			this.resetBall();
 		}
 
-		if (this.score.hasWinner()){
+		if (this.score.hasWinner()) {
 			this.stopGame();
 		}
 	}
