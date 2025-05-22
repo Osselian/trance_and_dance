@@ -31,6 +31,24 @@ export function start1v1() {
   game.start();
 }
 
+/**
+ * Запускает игру по найденному матчу.
+ * @param ws — открытое соединение WebSocket
+ * @param settings — настройки, пришедшие от сервера
+ */
+
+export function startQuickGame() {
+  renderGameScreen();
+  const game = new Game(GameMode.VS_PLAYER);
+  game.start();
+}
+
+//  export function startQuickGame(ws, settings = {}) {
+//    renderGameScreen();
+//   const game = new Game(GameMode.VS_PLAYER, ws, settings);
+//   game.start();
+// }
+
 // export function startTournament() {
 //   renderGameScreen();
 //   const game = new Game(GameMode.TOURNAMENT);
