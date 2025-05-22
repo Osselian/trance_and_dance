@@ -180,7 +180,7 @@ export class Game {
 		}
 	}
 
-	private stopGame(): void {
+	public stopGame(): void {
 		this.gameState = 'GAME_OVER';
 	}
 

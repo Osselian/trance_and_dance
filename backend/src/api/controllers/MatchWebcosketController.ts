@@ -20,7 +20,9 @@ export class MatchWebSocketController {
 		);	
 	}
 	
-	private async handleNewConnection(socket: WebSocket, request: FastifyRequest, userId: number) {
+	private async handleNewConnection(
+		socket: WebSocket, request: FastifyRequest, userId: number) 
+	{
 		this.wbService.handleNewConnection(
 			socket,
 			request.raw.url!,
