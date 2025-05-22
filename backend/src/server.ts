@@ -8,13 +8,13 @@ import fastifyMultipart from '@fastify/multipart';
 import { MatchmakingService } from './services/MatchmakingService';
 import { registerRoutes } from './utils/registerRoutes';
 import fastifyCors from '@fastify/cors';
-import fastifyStatic from '@fastify/static'; 
+import fastifyStatic from '@fastify/static';
 
 // server init
 const fastify = Fastify(
 	{
 		logger: true,
-		https: 
+		https:
 		{
 			key: fs.readFileSync(path.join(__dirname, '../certs/key.pem')),
 			cert: fs.readFileSync(path.join(__dirname, '../certs/cert.pem'))

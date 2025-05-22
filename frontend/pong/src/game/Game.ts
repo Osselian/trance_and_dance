@@ -130,8 +130,8 @@ private setupEventListeners(): void {
   //         }
   //         break;
   //       case ' ':
-  //         if (this.gameState === GameState.START || 
-  //             this.gameState === GameState.PAUSED || 
+  //         if (this.gameState === GameState.START ||
+  //             this.gameState === GameState.PAUSED ||
   //             this.gameState === GameState.GAME_OVER) {
   //           this.startGame();
   //         } else if (this.gameState === GameState.PLAYING) {
@@ -147,14 +147,14 @@ private setupEventListeners(): void {
   //   document.addEventListener('keyup', (e) => {
   //     if (this.gameState !== GameState.PLAYING) return;
 
-  //     if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
-  //         e.key === 'w' || e.key === 'W' || 
+  //     if (e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+  //         e.key === 'w' || e.key === 'W' ||
   //         e.key === 's' || e.key === 'S') {
   //       this.playerPaddle.stop();
   //     }
-      
-  //     if (this.gameMode === GameMode.VS_PLAYER && 
-  //         (e.key === 'o' || e.key === 'O' || 
+
+  //     if (this.gameMode === GameMode.VS_PLAYER &&
+  //         (e.key === 'o' || e.key === 'O' ||
   //          e.key === 'l' || e.key === 'L')) {
   //       this.computerPaddle.stop();
   //     }
@@ -179,18 +179,8 @@ private setupEventListeners(): void {
   private update(deltaTime: number): void {
     if (this.gameState !== GameState.PLAYING) return;
 
-    this.updatePaddlePositions(deltaTime);
-    this.playerPaddle.update(this.canvas.height, deltaTime);
-    this.ball.update(this.canvas.width, this.canvas.height, deltaTime);
-    
-    if (this.gameMode === GameMode.VS_COMPUTER) {
-      this.updateComputerPaddle(deltaTime);
-    } else {
-      this.computerPaddle.update(this.canvas.height, deltaTime);
-    }
-    
-    this.checkCollisions();
-    this.checkScoring();
+    // Удалите локальную логику движения мячика и ракеток
+    // Получайте обновления от сервера через WebSocket
   }
 
   private draw(): void {
@@ -210,7 +200,7 @@ private setupEventListeners(): void {
     // Draw game objects
     this.playerPaddle.draw(this.ctx);
     this.computerPaddle.draw(this.ctx);
-    
+
     // Only draw ball if not in countdown
     if (!this.isGameStartCountdown && !this.isWaitingForBallSpawn) {
       this.ball.draw(this.ctx);
@@ -220,11 +210,11 @@ private setupEventListeners(): void {
     if ((this.isWaitingForBallSpawn || this.isGameStartCountdown) && !this.score.hasWinner()) {
       const currentTime = performance.now();
       const timeElapsed = currentTime - this.lastScoreTime;
-      
+
       this.ctx.font = '120px Arial';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
-      
+
       // Show countdown numbers and GO! with different colors
       if (timeElapsed < 250) {
         this.ctx.fillStyle = '#FF0000'; // Red
@@ -268,7 +258,7 @@ private setupEventListeners(): void {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
       const winner = this.score.getWinner();
-      this.ctx.fillText(`${winner === 'player' ? 'You' : 'Computer'} won! Press SPACE to play again`, 
+      this.ctx.fillText(`${winner === 'player' ? 'You' : 'Computer'} won! Press SPACE to play again`,
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }
@@ -324,12 +314,12 @@ private setupEventListeners(): void {
         const isPlayerPaddle = paddle.isPlayerPaddle();
         const paddleCenterX = isPlayerPaddle ? paddlePos.x + paddleSize.width : paddlePos.x;
         const paddleCenterY = paddlePos.y + paddleSize.height / 2;
-        
+
         // Calculate relative position of ball to paddle center
         const relativeY = (ballPos.y - paddleCenterY) / (paddleSize.height / 2);
-        
+
         // Check if ball hit the side of the paddle
-        const hitSide = isPlayerPaddle ? 
+        const hitSide = isPlayerPaddle ?
           (ballPos.x + ballSize / 2 <= paddlePos.x + paddleSize.width / 4) :
           (ballPos.x - ballSize / 2 >= paddlePos.x + paddleSize.width * 3/4);
 
@@ -387,7 +377,7 @@ private setupEventListeners(): void {
     if (this.targetPaddlePositions) {
       const currentTime = performance.now();
       const timeElapsed = currentTime - this.lastScoreTime;
-      
+
       // Reset paddles instantly at the midpoint of countdown
       if (timeElapsed >= this.SCORE_DELAY / 2) {
         this.resetPaddles();

@@ -2,46 +2,43 @@ import { Position, Size } from './types';
 import { PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_SPEED } from './constants';
 
 export class Paddle {
-  private position: Position;
-  private size: Size = { width: PADDLE_WIDTH, height: PADDLE_HEIGHT };
-  private speed: number = PADDLE_SPEED;
-  private isMoving: boolean = false; // Add this property
-  private moveDirection: 'up' | 'down' | null = null; // Add this property
+  private position: { x: number; y: number };
+  private velocity: number;
 
-  constructor(x: number, isPlayer: boolean) {
-    this.position = { x, y: 300 }; // Start in the middle vertically
-  }
-
-  public getPosition(): Position {
-    return { ...this.position };
-  }
-
-  public getSize(): Size {
-    return { ...this.size };
+  constructor(initialX: number, isPlayer: boolean) {
+    this.position = { x: initialX, y: 0 };
+    this.velocity = 0; // Начальная скорость
   }
 
   public move(direction: 'up' | 'down', canvasHeight: number): void {
+    const speed = 5; // Скорость движения
     if (direction === 'up') {
-      this.position.y = Math.max(0, this.position.y - this.speed);
+      this.velocity = -speed;
     } else if (direction === 'down') {
-      this.position.y = Math.min(canvasHeight - this.size.height, this.position.y + this.speed);
+      this.velocity = speed;
     }
+  }
+
+  public stop(): void {
+    this.velocity = 0; // Останавливаем движение
   }
 
   public update(canvasHeight: number, deltaTime: number): void {
-    if (this.isMoving) {
-      const direction = this.moveDirection === 'up' ? -1 : 1;
-      this.position.y = Math.max(0, Math.min(canvasHeight - this.size.height, this.position.y + direction * this.speed * deltaTime));
+    this.position.y += this.velocity * deltaTime;
+
+    // Ограничиваем движение в пределах игрового поля
+    if (this.position.y < 0) {
+      this.position.y = 0;
+    } else if (this.position.y > canvasHeight - this.getSize().height) {
+      this.position.y = canvasHeight - this.getSize().height;
     }
   }
 
-  public startMoving(direction: 'up' | 'down'): void {
-    this.isMoving = true;
-    this.moveDirection = direction;
+  public getPosition(): { x: number; y: number } {
+    return this.position;
   }
 
-  public stopMoving(): void {
-    this.isMoving = false;
-    this.moveDirection = null;
+  public getSize(): { width: number; height: number } {
+    return { width: 10, height: 100 }; // Размер ракетки
   }
 }

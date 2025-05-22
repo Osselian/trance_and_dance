@@ -1,4 +1,3 @@
-import { GameService } from './GameService';
 import { MatchmakingService } from './MatchmakingService'
 import { WebSocket } from '@fastify/websocket';
 
@@ -7,7 +6,6 @@ type SocketWithUser = WebSocket & { userId: number; matchId: number};
 export class MatchWebSocketService {
 	//словарь игровых комнат
 	private rooms: Map<number, Set<SocketWithUser>> = new Map();
-	private games: Map<number, GameService> = new Map();
 
 	constructor(private matchService = new MatchmakingService()) {}
 
@@ -19,11 +17,8 @@ export class MatchWebSocketService {
 	{
 		try {
 			//извлечение токена из запроса
-			const host = Array.isArray(rawHeaders.host)
-				? rawHeaders.host[0]
-				: rawHeaders.host;
-
-			const url = new URL(rawRequestUrl, `https://${host}`);
+			const host = Array.isArray(rawHeaders.host) ? rawHeaders.host[0] : rawHeaders.host;
+			const url = new URL(rawRequestUrl, "https://${host}");
 			const matchIdParam = url.searchParams.get('matchId');
 
 			if (!matchIdParam) {
@@ -34,7 +29,7 @@ export class MatchWebSocketService {
 			//валидация matchId
 			const matchId = parseInt(matchIdParam, 10);
 			if (isNaN(matchId)) {
-				socket.close(1008, 'Invalid matchId');
+				socket.close(1008, 'Invalid token');
 				return;
 			}
 
@@ -55,21 +50,11 @@ export class MatchWebSocketService {
 			if (!room){
 				room = new Set();
 				this.rooms.set(matchId, room);
-				room.add(typedSocket);
-
-				// Создаем новый экземпляр GameService для этой комнаты
-				const gameService = new GameService();
-				this.games.set(matchId, gameService);
 			}
-			else {
-				room.add(typedSocket);
-				let game = this.games.get(matchId);
-				game?.addClient(userId, typedSocket);
-				game?.startGame();
-			}
+			room.add(typedSocket);
 
 			// Обработчик входящих сообщений
-			typedSocket.on('message', (rawMessage: string) => {
+			typedSocket.on('messsage', (rawMessage: string) => {
 				this.handleIncomingMessage(typedSocket, rawMessage);
 			});
 
@@ -94,10 +79,16 @@ export class MatchWebSocketService {
 		const room = this.rooms.get(socket.matchId);
 		if (!room) return;
 
-		const game = this.games.get(socket.matchId);
-		if (!game)
-			return;
-		game.handleClientMessage(socket.userId, msg);
+		const enrichedMessage = {
+			...msg,
+			fromUserId: socket.userId
+		};
+
+		for (const peerSocket of room) {
+			if (peerSocket !== socket) {
+				peerSocket.send(JSON.stringify(enrichedMessage));
+			}
+		}
 	}
 
 	private removeFromRoom(socket: SocketWithUser) {
@@ -106,12 +97,6 @@ export class MatchWebSocketService {
 			room.delete(socket);
 			if (room.size === 0) {
 				this.rooms.delete(socket.matchId);
-
-				const game = this.games.get(socket.matchId);
-				if (game) {
-					game.stopGame();
-					this.games.delete(socket.matchId);
-				}
 			}
 		}
 	}

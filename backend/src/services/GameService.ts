@@ -2,11 +2,14 @@ import { Ball } from '../pong/Ball';
 import { Paddle } from '../pong/Paddle';
 import { Score } from '../pong/Score';
 import { canvasWidth, canvasHeight } from '../pong/constants';
+import { GameState } from './GameState';
 
-interface ClientMessage {
+interface MoveMessage {
   type: 'move';
-  direction: 'up' | 'down';
+  data: { direction: 'up' | 'down' | 'stop' };
 }
+
+type ClientMessage = MoveMessage;
 
 export class GameService {
   private ball: Ball;
@@ -15,8 +18,10 @@ export class GameService {
   private score: Score;
   private clients: Map<number, WebSocket> = new Map();
   private gameInterval: NodeJS.Timeout | null = null;
+  private players: number[];
 
-  constructor() {
+  constructor(players: number[]) {
+    this.players = players;
     this.ball = new Ball();
     this.score = new Score();
     this.playerPaddle = new Paddle(50, true); // Left paddle
@@ -24,6 +29,10 @@ export class GameService {
   }
 
   public addClient(playerId: number, socket: WebSocket): void {
+    if (!this.players.includes(playerId)) {
+      console.warn(`Player ${playerId} is not part of this game.`);
+      return;
+    }
     if (this.clients.has(playerId)) {
       console.warn(`Client with playerId ${playerId} is already connected.`);
       return;
@@ -44,7 +53,7 @@ export class GameService {
     this.resetBall();
 
     this.gameInterval = setInterval(() => {
-      this.updateGameState(0.05); // 50 ms
+      this.updateGamePhysics(0.05); // 50 ms
       this.broadcastGameState();
     }, 50);
   }
@@ -58,19 +67,45 @@ export class GameService {
 
   public handleClientMessage(playerId: number, message: string): void {
     const data: ClientMessage = JSON.parse(message);
-    if (data.type === 'move') {
-      const direction = data.direction;
-      const paddle = playerId === 1 ? this.playerPaddle : this.opponentPaddle;
-
-      if (direction === 'up') {
-        paddle.move('up', canvasHeight);
-      } else if (direction === 'down') {
-        paddle.move('down', canvasHeight);
-      }
+    switch (data.type) {
+      case 'move':
+        this.handlePlayerMove(playerId, data.data);
+        break;
+      default:
+        console.warn(`Unknown message type: ${data.type}`);
     }
   }
 
-  private updateGameState(deltaTime: number): void {
+  private handlePlayerMove(playerId: number, data: { direction: 'up' | 'down' | 'stop' }): void {
+    const direction = data.direction;
+    const paddle = playerId === 1 ? this.playerPaddle : this.opponentPaddle;
+
+    if (direction === 'up') {
+      paddle.move('up', canvasHeight);
+    } else if (direction === 'down') {
+      paddle.move('down', canvasHeight);
+    }
+  }
+
+  public updatePlayerMove(playerId: number, direction: 'up' | 'down' | 'stop'): void {
+    const paddle = playerId === 1 ? this.playerPaddle : this.opponentPaddle;
+
+    switch (direction) {
+      case 'up':
+        paddle.move('up', canvasHeight);
+        break;
+      case 'down':
+        paddle.move('down', canvasHeight);
+        break;
+      case 'stop':
+        paddle.stop();
+        break;
+      default:
+        console.warn(`Unknown direction: ${direction}`);
+    }
+  }
+
+  private updateGamePhysics(deltaTime: number): void {
     this.ball.update(canvasWidth, canvasHeight, deltaTime);
 
     this.playerPaddle.update(canvasHeight, deltaTime);
@@ -126,10 +161,11 @@ export class GameService {
   }
 
   private broadcastGameState(): void {
-    const state = {
+    const state: GameState = {
+      timestamp: Date.now(),
       ball: this.ball.getPosition(),
       playerPaddle: this.playerPaddle.getPosition(),
-      opponentPaddle: this.opponentPaddle.getPosition(),
+      computerPaddle: this.opponentPaddle.getPosition(),
       score: this.score.getScore(),
     };
 
@@ -143,4 +179,5 @@ export class GameService {
       }
     });
   }
+
 }
