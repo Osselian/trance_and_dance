@@ -28,9 +28,14 @@ export class Score {
     return this.score.player >= SCORE_TO_WIN || this.score.opponent >= SCORE_TO_WIN;
   }
 
-  public getWinner(): 'player' | 'computer' | null {
-    if (this.score.player >= SCORE_TO_WIN) return 'player';
-    if (this.score.opponent >= SCORE_TO_WIN) return 'computer';
+//   public getWinner(): 'player' | 'computer' | null {
+//     if (this.score.player >= SCORE_TO_WIN) return 'player';
+//     if (this.score.opponent >= SCORE_TO_WIN) return 'computer';
+//     return null;
+//   }
+  public getWinner(): number | null {
+    if (this.score.player >= SCORE_TO_WIN) return 0;
+    if (this.score.opponent >= SCORE_TO_WIN) return 1;
     return null;
   }
 } 
