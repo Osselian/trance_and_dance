@@ -82,7 +82,7 @@ model Tournament {
 	status	        TournamentStatus         @default(REGISTRATION)
 	requiredPlayers Int                      @default(8)
 	currentRound    Int                      @default(1)
-	winnderId       Int?
+	winnerId       Int?
 	participants    TournamentParticipant[]
 	matches         TournamentMatch[]
 
