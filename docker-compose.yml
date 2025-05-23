@@ -11,6 +11,8 @@ services:
       - ./backend/certs:/app/certs
     ports:
       - "3000:3000"
+    networks:
+      - monitoring-tier
 
   admin-frontend:
     build:
@@ -27,6 +29,8 @@ services:
       - backend
     environment:
       - API_URL=http://backend:3000
+    networks:
+      - monitoring-tier
 
   pong-frontend:
     build:
@@ -41,6 +45,8 @@ services:
       - backend
     environment:
       - API_URL=http://backend:3000
+    networks:
+      - monitoring-tier
 
   prometheus:
     container_name: prometheus
@@ -66,7 +72,8 @@ services:
       - GF_USERS_DEFAULT_THEME=light
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_METRICS_ENABLED=true
-      - GF_METRICS_ENDPOINT=/metrics  
+      - GF_METRICS_ENDPOINT=/metrics
+      - GF_SECURITY_SKIP_VERIFY=true 
     volumes:
       - grafana-data:/var/lib/grafana
     ports:
@@ -78,8 +85,10 @@ services:
   node-exporter:
     container_name: node-exporter
     image: quay.io/prometheus/node-exporter:v1.8.2
-    ports:
-      - "9203:9100"
+    #ports:
+    #  - "9203:9100"
+    expose:
+      - "9093"
     volumes:
       - /:/host:ro
     command:
@@ -91,8 +100,10 @@ services:
   cadvisor:
     container_name: cadvisor
     image: gcr.io/cadvisor/cadvisor:v0.47.2
-    ports:
-      - "9204:8080"
+    #ports:
+    #  - "9204:8080"
+    expose:
+      - "8080"
     volumes:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
@@ -106,8 +117,10 @@ services:
     build:
       context: ./devops/monitoring/alertmanager
       dockerfile: Dockerfile
-    ports:
-      - '9202:9093'
+    #ports:
+    #  - '9202:9093'
+    expose:
+      - "9093"
     env_file:
       - .env
     networks:
