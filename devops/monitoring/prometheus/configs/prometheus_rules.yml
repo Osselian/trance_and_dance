@@ -21,13 +21,22 @@ groups:
           description: "Контейнер {{ $labels.name }} с image {{ $labels.image }} использует более 80% CPU"
 
       - alert: ContainerDown
-        expr: up{job=~"cadvisor|node_exporter|grafana|nginx"} == 0
+        expr: up{job=~"cadvisor|node_exporter|grafana|backend|frontend-admin|frontend-pong"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: "Контейнер пропал"
           description: "Контейнер {{ $labels.job }} недоступен по адресу {{ $labels.instance }}"
+      
+      - alert: ContainerMissing
+        expr: time() - container_last_seen{name=~"frontend-admin|frontend-pong|trance_and_dance_backend_1"} > 60
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Контейнер пропал"
+          description: "Контейнер {{ $labels.name }} ({{ $labels.instance }}) не отвечает более 1 минуты"
 
       - alert: TestFakeDown
         expr: vector(1)
