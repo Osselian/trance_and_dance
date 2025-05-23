@@ -16,6 +16,13 @@ export class TournamentRepository {
 		return prisma.tournament.findMany({ orderBy:  { startDate: 'asc'}})
 	}
 
+	async findActive(): Promise<Tournament[]> {
+		return prisma.tournament.findMany({
+			where: { status: TournamentStatus.ONGOING },
+			orderBy: { startDate: 'asc' }
+		});
+	}
+
 	async update( id: number, data: TournamentDto): Promise<Tournament> {
 		return prisma.tournament.update({ where: { id }, data});
 	}

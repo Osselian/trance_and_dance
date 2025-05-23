@@ -21,8 +21,12 @@ export class TournamentService {
 		return this.tournmamentRepo.create(data);
 	}
 
-	async getTournament(id: number): Promise<Tournament | null> {
-		return this.tournmamentRepo.findById(id);
+	async getTournament(id: number): Promise<Tournament[]> {
+		return this.tournmamentRepo.findActive();
+	}
+
+	async getActiveTournaments(): Promise<Tournament[]> {
+		return this.tournmamentRepo.findActive();
 	}
 
 	async listTournaments(): Promise<Tournament[]> {

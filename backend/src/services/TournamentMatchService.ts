@@ -3,6 +3,7 @@ import { TournamentRepository } from "../repositories/TournamentRepository";
 import { MatchRepository } from "../repositories/MatchRepository";
 import { TournamentMatch, Match, MatchStatus, TournamentStatus} from "@prisma/client";
 import { TournamentBracketService } from "./TournamentBracketService";
+import { MatchWebSocketService } from "./MatchWebsocketService";
 
 export class TournamentMatchService {
 	constructor(
@@ -162,16 +163,38 @@ export class TournamentMatchService {
 		}
 	}
 
-	// async checkInactiveParticipants(tournamentId: number): Promise<void>{
-	// 	const pendingMatches = 
-	// 		await this.tmRepo.findUnfinishedMatchesByTournament(tournamentId);
+	async checkDisconnectedPlayers(tournamentId: number): Promise<void>{
+		const unfinishedMatches = 
+			await this.tmRepo.findUnfinishedMatchesByTournament(tournamentId);
+		
+		for (const tm of unfinishedMatches) {
+			const match = await this.matchRepo.findById(tm.matchId);
+			if (!match)
+				throw new Error('Match not found');
 
-	// 	for (const tm of pendingMatches) {
-	// 		const match = await this.matchRepo.findById(tm.matchId);
-	// 		if
-	// 		const player1Active = await this.isPlayerActive(match.player1Id);
-	// 	}
-	// }
+			const player1Connected = this.isPlayerConnected(match.player1Id, match.id);
+			const player2Connected = this.isPlayerConnected(match.player2Id, match.id);
+
+			const matchDuration =
+				Date.now() - new Date(match.startAt || Date.now()).getTime();
+			if (matchDuration > 20 * 60 * 1000) {
+				if (!player1Connected && !player2Connected) {
+					await this.matchRepo.updateStatus(tm.matchId, MatchStatus.CANCELLED);
+				}
+				else if (!player1Connected) {
+					await this.awardTechnicalWin(tm.id, match.player2Id);
+				}
+				else if (!player2Connected) {
+					await this.awardTechnicalWin(tm.id, match.player1Id);
+				}
+			}
+		}
+	}
+
+	private isPlayerConnected(playerId: number, matchId: number): boolean {
+		const wssService = MatchWebSocketService.getInstance();
+		return wssService.isUserConnectedToMatch(playerId, matchId);
+	}
 
 	async checkAndStartNextRoundMatches(tournamentId: number): Promise<Match[]> {
 		const tournament = await this.tournamentRepo.findById(tournamentId);
