@@ -13,6 +13,7 @@ receivers:
     telegram_configs:
       - bot_token: ${TELEGRAM_BOT_TOKEN}
         chat_id: 1382792490
+        #send_resolved: false
         parse_mode: ''
         message: |
           🚨 {{ .Status | toUpper }} ALERT: {{ .CommonLabels.alertname }}
