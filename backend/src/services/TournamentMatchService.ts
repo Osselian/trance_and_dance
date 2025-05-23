@@ -12,6 +12,13 @@ export class TournamentMatchService {
 		private bracketService = new TournamentBracketService()
 	) {}
 
+	async getTournamentMatch(tournamentMatchId: number): Promise<TournamentMatch | null> {	
+		const tm = await this.tmRepo.findById(tournamentMatchId);
+		if (!tm)
+			throw new Error('Tournament match not found');
+		return tm;
+	}
+
 	async generateBracket(tournamentId: number, participantIds: number[]): 
 		Promise<TournamentMatch[]> 
 	{
