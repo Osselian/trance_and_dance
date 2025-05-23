@@ -1,3 +1,4 @@
+import { FastifyRequest } from 'fastify';
 import { GameService } from './GameService';
 import { MatchmakingService } from './MatchmakingService'
 import { WebSocket } from '@fastify/websocket';
@@ -11,14 +12,11 @@ export class MatchWebSocketService {
 
 	constructor(private matchService = new MatchmakingService()) {}
 
-	public async handleNewConnection(
-		socket: WebSocket,
-		rawRequestUrl: string,
-		rawHeaders: Record<string, string | string[]>,
-		userId: number) {
+	public async handleNewConnection(socket: WebSocket, request: FastifyRequest) {
 		try 
 		{
-			const matchId = await this.getMatchId(rawHeaders, rawRequestUrl, socket, userId);
+			const userId = (request.user as any).id; // Извлекаем userId из запроса	
+			const matchId = await this.getMatchId(request, socket, userId);
 			if (!matchId)
 				return;
 
@@ -27,25 +25,18 @@ export class MatchWebSocketService {
 			this.notifyOnConnection(typedSocket, userId, matchId, this.rooms.get(matchId)!);
 		}
 		catch {
-			socket.close(1011, 'Unexpected error');
+			(socket as WebSocket).close(1011, 'Unexpected error');
 		}
 	}
 
 	private async getMatchId(
-		rawHeaders: Record<string, string | string[]>, 
-		rawRequestUrl: string, 
+		request: FastifyRequest,
 		socket: WebSocket,
 		userId: number): Promise< number | undefined>
 	{
-		//извлечение токена из запроса
-		const host = Array.isArray(rawHeaders.host)
-			? rawHeaders.host[0]
-			: rawHeaders.host;
-
-		const url = new URL(rawRequestUrl, `https://${host}`);
-		const matchIdParam = url.searchParams.get('matchId');
+		const matchIdParam = (request.query as any).matchId;
 		if (!matchIdParam) {
-			socket.close(1008, 'No token or matchId');
+			(socket as WebSocket).close(1008, 'No token or matchId');
 			return;
 		}
 

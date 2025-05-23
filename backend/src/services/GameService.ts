@@ -1,6 +1,5 @@
-import { time } from "console";
 import { Game } from "../pong/Game";
-import { WebSocket } from "@fastify/websocket";
+import { WebSocket } from '@fastify/websocket';
 
 export class GameService {
 	private clients: Map<number, WebSocket> = new Map();

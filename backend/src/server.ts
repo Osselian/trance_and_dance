@@ -9,6 +9,7 @@ import { MatchmakingService } from './services/MatchmakingService';
 import { registerRoutes } from './utils/registerRoutes';
 import fastifyCors from '@fastify/cors';
 import fastifyStatic from '@fastify/static'; 
+import {fastifyWebsocket} from '@fastify/websocket';
 
 // server init
 const fastify = Fastify(
@@ -21,6 +22,7 @@ const fastify = Fastify(
 		}
 	}
 ).withTypeProvider<TypeBoxTypeProvider>();
+
 
 fastify.register(fastifyCors, {
 	origin: ['https://localhost:8080', 'https://localhost:8081'],
@@ -40,12 +42,16 @@ fastify.register(fastifyStatic, {
   decorateReply: false,
 });
 
+
 fastify.register(fastifyCookie);
+
 fastify.register(fastifyJwt, {
 	secret: process.env.ACCESS_TOKEN_SECRET || 'superSecretKey'
 });
+
 fastify.register(fastifyMultipart);
 
+fastify.register(require('@fastify/websocket'));
 registerRoutes(fastify);
 
 //server start
