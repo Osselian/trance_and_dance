@@ -415,7 +415,11 @@ private setupEventListeners(): void {
 
   private startGame(): void {
     if (this.gameState === GameState.GAME_OVER) {
-      this.resetGame();
+        // Store the current game mode before reset
+        const currentMode = this.gameMode;
+        this.resetGame();
+        // Restore the game mode
+        this.gameMode = currentMode;
     }
     this.isGameStartCountdown = true;
     this.lastScoreTime = performance.now();
@@ -442,7 +446,10 @@ private setupEventListeners(): void {
     this.gameState = GameState.MODE_SELECTION;
     this.gameMode = null;
     this.isGameStartCountdown = false;
-    this.hideMessage(); // Hide the message element since we're drawing on canvas
+    // Reset both paddles to ensure their internal state is cleared
+    this.playerPaddle.reset(this.canvas.height);
+    this.computerPaddle.reset(this.canvas.height);
+    this.hideMessage();
   }
 
   private showMessage(message: string): void {
