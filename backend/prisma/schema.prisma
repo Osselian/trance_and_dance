@@ -106,12 +106,13 @@ model TournamentMatch{
 }
 
 model TournamentParticipant {
-	id           Int        @id @default(autoincrement())
-	tournament   Tournament @relation(fields: [tournamentId], references: [id])
-	tournamentId Int
-	user         User       @relation(fields: [userId], references: [id])
-	userId       Int
-	registeredAt DateTime   @default(now())
+	id             Int        @id @default(autoincrement())
+	tournament     Tournament @relation(fields: [tournamentId], references: [id])
+	tournamentId   Int
+	user           User       @relation(fields: [userId], references: [id])
+	userId         Int
+	tournamentName String?
+	registeredAt   DateTime   @default(now())
 
 	@@unique([tournamentId, userId])
 }
