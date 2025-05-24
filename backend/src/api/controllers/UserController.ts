@@ -16,8 +16,8 @@ export class UserController {
 		this.fastify.post('/friend-request', this.sendFriendrequest.bind(this));
 		this.fastify.post('/friend-accept', this.acceptFriendrequest.bind(this));
 		this.fastify.get('/friends', this.getFriends.bind(this));
-		this.fastify.get('/friend-requests', this.getIncomingRequests.bind(this)
-);
+		this.fastify.get('/friend-requests', this.getIncomingRequests.bind(this));
+		this.fastify.get('/:id', this.getUserById.bind(this));
 	}
 
 	async getAll(req: FastifyRequest, reply: FastifyReply){
@@ -104,4 +104,18 @@ export class UserController {
 		const incoming = await this.userService.getIncomingRequests(userId);
 		reply.send(incoming);
 	}
+
+  private async getUserById(req: FastifyRequest, reply: FastifyReply) {
+    const id = Number((req.params as any).id);
+    if (isNaN(id)) {
+      return reply.status(400).send({ message: "Invalid user ID" });
+    }
+
+    const profile = await this.userService.getProfile(id);
+    if (!profile) {
+      return reply.status(404).send({ message: "User not found" });
+    }
+
+    reply.send(profile);
+  }
 }

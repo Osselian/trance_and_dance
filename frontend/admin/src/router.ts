@@ -7,6 +7,14 @@ import { startVsComputer, start1v1, startQuickGame } from '../../pong/src/game/g
 import { friendsView, initFriends }  from './pages/friends'
 import { ChatPage }                  from './pages/chat'
 
+export const router = {
+  navigate(to: string) {
+    // устанавливаем хэш и вызываем перерисовку
+    window.location.hash = to.startsWith('#') ? to : `#${to}`
+    // mountRoute сработает через hashchange или сразу вызов ниже
+  }
+}
+
 type Route = {
   view?: string
   init?: () => void | Promise<void>
@@ -34,31 +42,25 @@ async function mountRoute() {
   const outlet = document.getElementById('outlet')!
   let route: Route
 
-  if (location.hash.startsWith('#/play/quick/')) {
-    // динамический маршрут для Быстрой игры
+  if (location.hash.startsWith('#/profile/')) {
+    const id = Number(location.hash.split('/')[2])
+    route = {
+      view: profileView,
+      init: () => profileInit(id)     // dynamic profile
+    }
+  }
+  else if (location.hash.startsWith('#/play/quick/')) {
     const matchId = location.hash.split('/')[3]
     route = {
-      view: '', 
-      init: () => {
-        const ws = new WebSocket(`ws://${location.host}/ws/quickgame`)
-        ws.addEventListener('open', () => {
-          ws.send(JSON.stringify({ action: 'joinRoom', matchId }))
-        })
-        ws.addEventListener('message', ({ data }) => {
-          const msg = JSON.parse(data)
-          if (msg.type === 'start') {
-            // startQuickGame(ws, msg.settings)
-                startQuickGame()
-          }
-        })
-      }
+      view: '',
+      init: () => { /* …quick game init… */ }
     }
-  } else {
-    // статические маршруты
+  }
+  else {
     route = routes[location.hash] ?? { view: notFoundView }
   }
 
-  // рендерим view
+  // рендер view
   if (route.view) outlet.innerHTML = route.view
   else outlet.innerHTML = ''
 

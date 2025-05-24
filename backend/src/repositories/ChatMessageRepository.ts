@@ -2,12 +2,12 @@ import { PrismaClient, MessageType}  from '@prisma/client'
 import { PagingDto } from '../dtos/PagingDto';
 
 export interface ConversationRow {
-  otherId:      number;       // ID собеседника
-  username:     string;       // его имя
-  avatarUrl:    string | null;// ссылка на аватар
-  lastMessage:  string;       // текст последнего сообщения
-  lastAt:       Date;         // время последнего сообщения
-  unreadCount:  number;       // сколько у вас непрочитанных от него
+  otherId:     number;       // ID собеседника
+  username:    string;       // его имя
+  avatarUrl:   string | null;// ссылка на аватар
+  lastMessage: string;       // текст последнего сообщения
+  lastAt:      Date;         // время последнего сообщения
+  unreadCount: number;       // сколько непрочитанных сообщений
 }
 
 const prisma = new PrismaClient();

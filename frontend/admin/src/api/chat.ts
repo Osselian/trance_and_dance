@@ -44,10 +44,26 @@ export interface Message {
   createdAt: string;
 }
 
+export interface Conversation {
+  otherId:     number;
+  username:    string;
+  avatarUrl:   string | null;
+  lastMessage: string;
+  lastAt:      string;
+  unreadCount: number;
+}
+
+export interface Me {
+  id: number;
+  username: string;
+  avatarUrl: string | null;
+}
+
 export const ChatAPI = {
+
+  getMe: (): Promise<Me> => get('/user/profile'),
   // получить список диалогов (userId, user: {…})
-  getConversations:        (): Promise<{ userId: number; user: any }[]> =>
-                             get('/chat'),
+  getConversations: (): Promise<Conversation[]> => get('/chat'),
 
   // получить историю переписки с userId
   getConversation:         (id: number): Promise<Message[]> =>
@@ -65,7 +81,7 @@ export const ChatAPI = {
   listBlocked:             (): Promise<number[]> =>
                              get('/block'),
   blockUser:               (id: number): Promise<void> =>
-                             post(`/block/${id}`),
+                             post(`/block/${id}`, {}),
   unblockUser:             (id: number): Promise<void> =>
                              del(`/block/${id}`),
 }

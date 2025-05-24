@@ -1,207 +1,253 @@
 import { ChatAPI } from '../api/chat';
-import type { Message } from '../api/chat';
+import type { Message, Conversation } from '../api/chat';
 import { FriendsAPI } from '../api/friends';
+import { MatchAPI } from '../api/match';
+import { router } from '../router';
 
-// Создаёт окно чата с поддержкой WebSocket
+// Интерфейс для UI-диалогов: приводим lastAt к Date и avatarUrl к строке
+interface UIConversation {
+  otherId:     number;
+  username:    string;
+  avatarUrl:   string;
+  lastMessage: string;
+  lastAt:      Date | null;
+  unreadCount: number;
+}
+
+// Страница чата без WebSocket (REST-поллинг), с REST-приглашением в Pong
 export async function ChatPage(): Promise<HTMLElement> {
-  // Получаем текущего пользователя (id берём из первого диалога, пока нет отдельного API)
-  const currentUser = await ChatAPI.getConversations()
-    .then(convs => ({ id: convs[0]?.userId || 0 }));
+  const me = await ChatAPI.getMe();
+  const currentUserId = me.id;
 
   let selectedUserId: number | null = null;
   let isBlocked = false;
+  let pollTimer: number;
 
-  // Инициализация WebSocket
-  const socket = new WebSocket(`ws://localhost:3000/ws/chat`);
-  socket.onopen = () => {
-    socket.send(JSON.stringify({ type: 'join', userId: currentUser.id }));
-  };
-  socket.onmessage = event => {
-    const data = JSON.parse(event.data);
-    if (data.type === 'message' && data.from === selectedUserId) {
-      appendMessage(data as Message);
-    }
-    if (data.type === 'tournament-notification' && data.userId === currentUser.id) {
-      alert(`Следующий матч турнира: ${data.details}`);
-    }
-  };
-
-  // Построение DOM
+  // --- Построение DOM ---
   const container = document.createElement('div');
   container.className = 'flex h-full';
 
+  // Сайдбар с пользователями
   const aside = document.createElement('aside');
   aside.className = 'w-1/4 border-r overflow-y-auto';
-  container.append(aside);
   const convList = document.createElement('ul');
   aside.append(convList);
+  container.append(aside);
 
+  // Главная область
   const main = document.createElement('main');
   main.className = 'flex-1 flex flex-col';
   container.append(main);
 
-  // Хедер чата
+  // Header (скрываем по умолчанию)
   const header = document.createElement('div');
-  header.className = 'flex items-center justify-between p-4 border-b';
+  header.className = 'flex items-center justify-between p-4 border-b hidden';
   main.append(header);
 
   const userInfo = document.createElement('div');
   userInfo.className = 'flex items-center space-x-2';
-  header.append(userInfo);
-
   const avatar = document.createElement('img');
   avatar.className = 'w-10 h-10 rounded-full';
-  userInfo.append(avatar);
-
   const userName = document.createElement('span');
   userName.className = 'font-semibold';
-  userInfo.append(userName);
+  userInfo.append(avatar, userName);
 
   const actions = document.createElement('div');
   actions.className = 'space-x-2';
-  header.append(actions);
+  const blockBtn = document.createElement('button'); blockBtn.textContent = 'Заблокировать';
+  const pongBtn = document.createElement('button'); pongBtn.textContent = 'Пригласить в Pong';
+  const profileBtn = document.createElement('button'); profileBtn.textContent = 'Профиль';
+  actions.append(blockBtn, pongBtn, profileBtn);
 
-  const blockBtn = document.createElement('button');
-  actions.append(blockBtn);
-
-  const pongBtn = document.createElement('button');
-  pongBtn.textContent = 'Пригласить в Pong';
-  actions.append(pongBtn);
-
-  const tourBtn = document.createElement('button');
-  tourBtn.textContent = 'Пригласить в Турнир';
-  actions.append(tourBtn);
-
-  const profileLink = document.createElement('button');
-  profileLink.textContent = 'Профиль';
-  actions.append(profileLink);
+  header.append(userInfo, actions);
 
   // Окно сообщений
   const chatWindow = document.createElement('div');
-  chatWindow.className = 'flex-1 p-4 overflow-y-auto';
+  chatWindow.className = 'flex-1 p-4 overflow-y-auto hidden';
   main.append(chatWindow);
 
   // Поле ввода
   const inputWrapper = document.createElement('div');
-  inputWrapper.className = 'p-4 border-t flex space-x-2';
+  inputWrapper.className = 'p-4 border-t flex space-x-2 hidden';
+  const messageInput = document.createElement('input');
+  messageInput.type = 'text'; messageInput.placeholder = 'Напишите сообщение...';
+  messageInput.className = 'flex-1 p-2 border rounded';
+  const sendBtn = document.createElement('button'); sendBtn.textContent = 'Отправить';
+  inputWrapper.append(messageInput, sendBtn);
   main.append(inputWrapper);
 
-  const messageInput = document.createElement('input');
-  messageInput.type = 'text';
-  messageInput.placeholder = 'Напишите сообщение...';
-  messageInput.className = 'flex-1 p-2 border rounded';
-  inputWrapper.append(messageInput);
+  // Показать UI после выбора
+  function showChatUI() {
+    header.classList.remove('hidden');
+    chatWindow.classList.remove('hidden');
+    inputWrapper.classList.remove('hidden');
+  }
 
-  const sendBtn = document.createElement('button');
-  sendBtn.textContent = 'Отправить';
-  inputWrapper.append(sendBtn);
-
-  // --- функции логики ---
-
+  // Добавление сообщения в окно
   function appendMessage(m: Message) {
     const msgEl = document.createElement('div');
-    msgEl.className = m.senderId === currentUser.id ? 'text-right' : 'text-left';
+    msgEl.className = m.senderId === currentUserId ? 'text-right' : 'text-left';
     msgEl.textContent = m.content;
     chatWindow.append(msgEl);
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
 
+  // Загрузка списка диалогов + друзей
   async function loadConversations() {
     convList.innerHTML = '';
-    const convs = await ChatAPI.getConversations();
+    const rawConvs: Conversation[] = await ChatAPI.getConversations();
     const friends = await FriendsAPI.getFriends();
+    const map = new Map<number, UIConversation>();
 
-    // Объединяем диалоги и друзей
-    const map = new Map<number, any>();
-    for (const c of convs) {
-      map.set(c.userId, c);
+    // Преобразуем API-диалоги в UI-диалоги
+    for (const c of rawConvs) {
+      map.set(c.otherId, {
+        otherId: c.otherId,
+        username: c.username,
+        avatarUrl: c.avatarUrl ?? '',
+        lastMessage: c.lastMessage,
+        lastAt: c.lastAt ? new Date(c.lastAt) : null,
+        unreadCount: c.unreadCount
+      });
     }
+
+    // Добавляем друзей без истории переписки
     for (const f of friends) {
       if (!map.has(f.id)) {
-        map.set(f.id, { userId: f.id, user: f, lastMessage: '', lastAt: null, unreadCount: 0 });
+        map.set(f.id, {
+          otherId: f.id,
+          username: f.username,
+          avatarUrl: f.avatarUrl ?? '',
+          lastMessage: '',
+          lastAt: null,
+          unreadCount: 0
+        });
       }
     }
 
-    const all = Array.from(map.values()).sort((a, b) => {
+    // Сортировка по дате последнего сообщения
+    const list = Array.from(map.values()).sort((a, b) => {
       if (!a.lastAt && !b.lastAt) return 0;
       if (!a.lastAt) return 1;
       if (!b.lastAt) return -1;
       return b.lastAt.getTime() - a.lastAt.getTime();
     });
 
-    for (const item of all) {
+    // Рендер списка
+    for (const item of list) {
       const li = document.createElement('li');
       li.className = 'p-2 hover:bg-gray-100 cursor-pointer flex justify-between';
-      li.textContent = item.user.username;
-      const badge = document.createElement('span');
-      badge.className = 'text-sm text-red-500';
-      if (item.unreadCount > 0) badge.textContent = String(item.unreadCount);
-      li.append(badge);
-      li.onclick = () => selectConversation(item.userId);
+      const nameSpan = document.createElement('span'); nameSpan.textContent = item.username;
+      const badge = document.createElement('span'); badge.className = 'text-sm text-red-500';
+      if (item.unreadCount) badge.textContent = String(item.unreadCount);
+      li.append(nameSpan, badge);
+      li.onclick = () => selectConversation(item.otherId);
       convList.append(li);
     }
   }
 
+  // Выбор диалога
   async function selectConversation(userId: number) {
     selectedUserId = userId;
+    clearInterval(pollTimer);
     const convs = await ChatAPI.getConversations();
-    const user = convs.find(c => c.userId === userId)?.user;
-    if (user) {
-      avatar.src = user.avatarUrl;
-      userName.textContent = user.username;
+    const conv = convs.find(c => c.otherId === userId);
+    if (conv) {
+      avatar.src = conv.avatarUrl ?? '';
+      userName.textContent = conv.username;
     }
-    await checkBlockStatus();
+    await checkBlock();
     chatWindow.innerHTML = '';
-    const msgs = await ChatAPI.getConversation(userId);
+    showChatUI();
+    await loadMessages();
+    pollTimer = window.setInterval(loadMessages, 5000);
+  }
+
+  // Загрузка сообщений
+  async function loadMessages() {
+    if (!selectedUserId) return;
+    const msgs = await ChatAPI.getConversation(selectedUserId);
+    chatWindow.innerHTML = '';
     msgs.forEach(appendMessage);
   }
 
+  // Отправка сообщения
   async function doSend() {
     if (!selectedUserId) return;
-    const content = messageInput.value.trim();
-    if (!content) return;
-    const msg = await ChatAPI.sendMessage(selectedUserId, content);
-    appendMessage(msg);
-    messageInput.value = '';
-    await loadConversations();
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    try {
+      const msg = await ChatAPI.sendMessage(selectedUserId, text);
+      appendMessage(msg);
+      messageInput.value = '';
+      await loadConversations();
+    }
+    catch (err: any) {
+      // если это «заблокировали» — показываем дружелюбный алерт
+      if (err.message.includes("you've been blocked")) {
+        alert('Нельзя отправить сообщение: этот пользователь вас заблокировал.');
+        // и отключаем ввод
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        return;
+      }
+      // иначе пробрасываем дальше (или показываем общее сообщение)
+      console.error(err);
+      alert('Ошибка отправки: ' + err.message);
+    }
   }
 
+  // Проверка блока
+  async function checkBlock() {
+    if (!selectedUserId) return;
+    const list = await ChatAPI.listBlocked();
+    isBlocked = list.includes(selectedUserId);
+    blockBtn.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
+    blockBtn.disabled = false;
+  }
+
+  // Тоггл блокировки
   async function toggleBlock() {
     if (!selectedUserId) return;
-    if (isBlocked) await ChatAPI.unblockUser(selectedUserId);
-    else await ChatAPI.blockUser(selectedUserId);
-    isBlocked = !isBlocked;
-    blockBtn.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
-    chatWindow.innerHTML = '';
+
+    blockBtn.disabled = true;
+    try {
+      if (isBlocked) {
+        // раз-блокируем
+        await ChatAPI.unblockUser(selectedUserId);
+      } else {
+        // блокируем
+        await ChatAPI.blockUser(selectedUserId);
+      }
+
+      // после успеха меняем флаг и подпись
+      isBlocked = !isBlocked;
+      blockBtn.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
+    } catch (err) {
+      console.error('Block/unblock failed', err);
+      // здесь можно вывести уведомление пользователю
+    } finally {
+      blockBtn.disabled = false;
+    }
   }
 
-  async function checkBlockStatus() {
-    const list = await ChatAPI.listBlocked();
-    isBlocked = list.includes(selectedUserId!);
-    blockBtn.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
-  }
-
-  function invitePong() {
+  // Приглашение в Pong
+  async function invitePong() {
     if (!selectedUserId) return;
-    socket.send(JSON.stringify({ type: 'pong-invite', to: selectedUserId }));
+    const { matchId } = await MatchAPI.createMatchInvite(selectedUserId);
+    router.navigate(`#/play/quick/${matchId}`);
   }
 
-  function inviteTournament() {
-    if (!selectedUserId) return;
-    socket.send(JSON.stringify({ type: 'tournament-invite', to: selectedUserId }));
-  }
-
-  // --- привязка событий ---
+  // --- Привязка событий ---
   sendBtn.onclick = doSend;
   messageInput.addEventListener('keyup', e => e.key === 'Enter' && doSend());
   blockBtn.onclick = toggleBlock;
   pongBtn.onclick = invitePong;
-  tourBtn.onclick = inviteTournament;
-  profileLink.onclick = () => selectedUserId && (window.location.hash = `#/profile/${selectedUserId}`);
+  profileBtn.onclick = () => selectedUserId && router.navigate(`#/profile/${selectedUserId}`);
 
   // Инициализация
   await loadConversations();
-
   return container;
 }
 
