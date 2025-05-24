@@ -9,6 +9,7 @@ export class ChatController {
 	) {}
 
 	public registerSecureRoutes() {
+		this.fastify.get('/', this.getConversations.bind(this));
 		this.fastify.post('/:id/message', this.sendMessage.bind(this));
 		this.fastify.get('/:id/conversation', this.getConversation.bind(this));
 		this.fastify.get('/:id/unread', this.getUnread.bind(this));
@@ -66,5 +67,13 @@ export class ChatController {
 		catch (err) {
 			reply.status(400).send({ message: (err as Error).message});
 		}
+	}
+
+	private async getConversations(req: FastifyRequest, reply: FastifyReply) {
+		const userId = (req.user as any).id;
+		console.log('GET /chat for user', userId);
+		const list = await this.chatService.listConversations(userId);
+		console.log('Conversations result:', list);
+		reply.send(list);
 	}
 }

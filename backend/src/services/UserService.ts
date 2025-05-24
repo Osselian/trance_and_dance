@@ -53,8 +53,8 @@ export class UserService {
 		onlineUsers.delete(userId);
 	}
 
-	static isUserOnline(userId: number) {
-		onlineUsers.has(userId);
+	static isUserOnline(userId: number): boolean {
+		return onlineUsers.has(userId);
 	}
 
 	async sendFriendRequest(requesterId: number, receiverId: number) {
@@ -106,4 +106,15 @@ export class UserService {
       }
     }));
   }
+
+	public async getById(id: number) {
+		return this.getProfile(id);
+	}
+
+	async getOnlineStatuses(ids: number[]): Promise<{ id: number; online: boolean }[]> {
+  	return ids.map(id => ({
+			id,
+			online: UserService.isUserOnline(id),
+			}));
+	}
 }

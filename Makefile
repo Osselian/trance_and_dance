@@ -1,4 +1,6 @@
-HOSTS := localhost 127.0.0.1 ::1 backend frontend-admin frontend-pong grafana prometheus
+
+HOSTS := localhost 127.0.0.1 ::1 backend frontend-admin frontend-pong grafana prometheus elasticsearch logstash
+
 
 # Папки, куда будем писать pem-файлы
 BACKEND_CERT_DIR := backend/certs
@@ -27,4 +29,4 @@ certs:
 	@echo "→ Generating prometheus cert…"
 	@mkcert -key-file $(PROMETHEUS_CERT_DIR)/prometheus.key -cert-file $(PROMETHEUS_CERT_DIR)/prometheus.crt $(HOSTS)
 up:
-	docker-compose up --build
+	docker-compose -f docker-compose.yml -f docker-compose.elk.yml up --build

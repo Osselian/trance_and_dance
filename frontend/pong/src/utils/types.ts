@@ -28,6 +28,7 @@ export type GameState = typeof GameState[keyof typeof GameState]
 export const GameMode = {
   VS_COMPUTER: 'vsComputer',
   VS_PLAYER:   'vsPlayer',
+  QUICK:       'quick',
 } as const
 
 export type GameMode = typeof GameMode[keyof typeof GameMode]
