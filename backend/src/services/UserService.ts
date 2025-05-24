@@ -46,10 +46,12 @@ export class UserService {
 	}
 
 	static markUserOnline(userId: number) {
+		console.log(`[UserService] markUserOnline: ${userId}`);
 		onlineUsers.add(userId);
 	}
 
 	static markUserOffline(userId: number) {
+		console.log(`[UserService] markUserOnline: ${userId}`);
 		onlineUsers.delete(userId);
 	}
 

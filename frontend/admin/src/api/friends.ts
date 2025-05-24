@@ -45,6 +45,11 @@ export interface IncomingRequest {
   };
 }
 
+export interface UserStatus {
+  id: number;
+  online: boolean;
+}
+
 export const FriendsAPI = {
   getAllUsers:        (): Promise<User[]>   => get('/user'),
   getFriends:         (): Promise<Friend[]> => get('/user/friends'),
@@ -54,4 +59,15 @@ export const FriendsAPI = {
                         post('/user/friend-request', { receiverId: id }),
   acceptFriendRequest:(id: number): Promise<void> =>
                         post('/user/friend-accept',   { requesterId: id }),
+
+  getOnlineStatuses: (ids: number[]): Promise<UserStatus[]> => {
+    if (ids.length === 0) {
+      // если нет друзей — сразу пустой массив
+      return Promise.resolve([]);
+    }
+    const params = new URLSearchParams();
+    // ВАЖНО: параметр должен называться именно userId
+    ids.forEach(id => params.append('userId', id.toString()));
+    return get(`/user/statuses?${params.toString()}`);
+  },
 };

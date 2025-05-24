@@ -27,9 +27,13 @@ export interface GoogleLoginResponse {
 }
 
 async function post<T>(endpoint: string, body?: unknown): Promise<T> {
+  const token = localStorage.getItem('token');
   const resp = await fetch(BASE + '/auth' + endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
   })
@@ -83,7 +87,11 @@ export const AuthAPI = {
   },
 
   refresh: () => post<{ accessToken: string }>('/refresh-token'),
-  logout:  () => post<{ message: string }>('/logout'),
+
+  logout: async (): Promise<void> => {
+    await post('/logout', {});          // бэкенд очистит refresh-cookie и markUserOffline
+    localStorage.removeItem('token');
+  },
 
   getProfile: () =>
       get<Profile>('/user/profile'),

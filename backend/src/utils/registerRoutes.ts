@@ -21,9 +21,7 @@ export function registerRoutes(fastify: FastifyInstance) {
 		return { status: 'ok', message: 'Pong!' };
 	});
 
-	const auth = new AuthController(fastify);
-	auth.registerRoutes();
-
+	registerSecure(fastify, '/auth', AuthController, 'registerSecureRoutes');
 	registerSecure(fastify, '/user', UserController, 'registerRoutes');
 	registerSecure(fastify, '/matchmaking', MatchmakingController, 'registerProtectedRoutes');
 	registerSecure(fastify, '/match', MatchController, 'registerRoutes');
@@ -35,6 +33,11 @@ export function registerRoutes(fastify: FastifyInstance) {
 	registerSecure(fastify, '/invitation', InvitationController, 'registerSecureRoutes');
 
 	// public: /matchmaking/process
+	fastify.register(async (app) => {
+		const authCtrl = new AuthController(app);
+		authCtrl.registerRoutes();
+	}, { prefix: '/auth' });
+
 	fastify.register(async (app) => {
 		const mmCtrl = new MatchmakingController(app);
 		mmCtrl.registerPublicRoutes();

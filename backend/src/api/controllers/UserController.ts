@@ -3,6 +3,10 @@ import { UserService } from "../../services/UserService";
 import fs from 'fs';
 import path from 'path';
 
+interface StatusQuery {
+  userId: string | string[];
+}
+
 export class UserController {
 	private userService = new UserService();
 
@@ -18,6 +22,7 @@ export class UserController {
 		this.fastify.get('/friends', this.getFriends.bind(this));
 		this.fastify.get('/friend-requests', this.getIncomingRequests.bind(this));
 		this.fastify.get('/:id', this.getUserById.bind(this));
+		this.fastify.get('/statuses', this.getOnlineStatuses.bind(this));
 	}
 
 	async getAll(req: FastifyRequest, reply: FastifyReply){
@@ -27,6 +32,7 @@ export class UserController {
 
 	async getProfile(req: FastifyRequest, reply: FastifyReply) {
 		const userId = (req as any).user.id as number;
+		UserService.markUserOnline(userId);
 		const profile = await this.userService.getProfile(userId);
 		if (!profile)
 			return reply.status(404).send({ message: 'User not found' });
@@ -118,4 +124,25 @@ export class UserController {
 
     reply.send(profile);
   }
+
+	private async getOnlineStatuses(
+		request: FastifyRequest<{ Querystring: StatusQuery }>,
+		reply: FastifyReply
+	) {
+		// 1) Собираем массив чисел из query-параметров
+		const raw = request.query.userId;
+		const ids = (Array.isArray(raw) ? raw : [raw])
+			.map(id => parseInt(id, 10))
+			.filter(id => !isNaN(id));
+
+		if (ids.length === 0) {
+			return reply.status(400).send({ message: "Invalid user ID" });
+		}
+
+		// 2) Здесь мы вызываем ваш сервис
+		const statuses = await this.userService.getOnlineStatuses(ids);
+
+		// 3) Отдаем результат клиенту
+		return reply.send(statuses);
+	}
 }

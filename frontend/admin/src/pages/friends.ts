@@ -1,21 +1,21 @@
 import { FriendsAPI } from '../api/friends';
 import { AuthAPI } from '../api/auth';
-import type { User, Friend, IncomingRequest } from '../api/friends';
+import type { User, Friend, IncomingRequest, UserStatus } from '../api/friends';
 
 export const friendsView = `
 <section class="p-6 space-y-8">
-  <h1 class="text-3xl font-bold">Мои друзья</h1>
+  <h1 class="text-3xl font-bold">Friends</h1>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <div>
-      <h2 class="text-xl font-semibold mb-2">Все пользователи</h2>
+      <h2 class="text-xl font-semibold mb-2">All users</h2>
       <ul id="all-users-list" class="space-y-2"></ul>
     </div>
     <div>
-      <h2 class="text-xl font-semibold mb-2">Мои друзья</h2>
+      <h2 class="text-xl font-semibold mb-2">My friends</h2>
       <ul id="my-friends-list" class="space-y-2"></ul>
     </div>
     <div>
-      <h2 class="text-xl font-semibold mb-2">Входящие запросы</h2>
+      <h2 class="text-xl font-semibold mb-2">Incoming messages</h2>
       <ul id="incoming-requests-list" class="space-y-2"></ul>
     </div>
   </div>
@@ -23,17 +23,17 @@ export const friendsView = `
 `;
 
 export async function initFriends(): Promise<void> {
-  const allUsersUL     = document.getElementById('all-users-list')! as HTMLUListElement;
-  const myFriendsUL    = document.getElementById('my-friends-list')! as HTMLUListElement;
-  const incomingUL     = document.getElementById('incoming-requests-list')! as HTMLUListElement;
+  const allUsersUL  = document.getElementById('all-users-list')! as HTMLUListElement;
+  const myFriendsUL = document.getElementById('my-friends-list')! as HTMLUListElement;
+  const incomingUL  = document.getElementById('incoming-requests-list')! as HTMLUListElement;
 
-  // Загрузка
+  // показываем «Загрузка…»
   allUsersUL.innerHTML  = '<li>Загрузка…</li>';
   myFriendsUL.innerHTML = '<li>Загрузка…</li>';
   incomingUL.innerHTML  = '<li>Загрузка…</li>';
 
   try {
-    // 1) Получаем свой профиль и данные
+    // ==== 1) Получаем базовые списки ====
     const me = await AuthAPI.getProfile();
     const [users, friends, incoming] = await Promise.all([
       FriendsAPI.getAllUsers(),
@@ -41,24 +41,47 @@ export async function initFriends(): Promise<void> {
       FriendsAPI.getIncomingRequests(),
     ]);
 
-    const selfId = me.id;
-    const friendIds = new Set(friends.map(f => f.id));
+    const selfId      = me.id;
+    // используем Массив, а не Set, чтобы URLSearchParams точно итерался
+    const friendIds   = friends.map(f => f.id);
     const incomingIds = new Set(incoming.map(r => r.requester.id));
 
-    // 2) «Мои друзья»
+    // ==== 2) Пытаемся подгрузить статусы, если есть друзья ====
+    let statusMap = new Map<number, boolean>();
+    if (friendIds.length > 0) {
+      try {
+        const statuses: UserStatus[] = await FriendsAPI.getOnlineStatuses(friendIds);
+        statusMap = new Map(statuses.map(s => [s.id, s.online]));
+      } catch (err) {
+        console.warn('Не удалось получить статусы онлайн:', err);
+        // statusMap останется пустым → все offline
+      }
+    }
+
+    // ==== 3) Рендер «Мои друзья» с индикатором ====
     myFriendsUL.innerHTML = '';
     if (friends.length === 0) {
       myFriendsUL.innerHTML = '<li>У вас пока нет друзей</li>';
     } else {
       friends.forEach((f: Friend) => {
+        const online = statusMap.get(f.id) ?? false;
         const li = document.createElement('li');
-        li.textContent = f.username;
-        li.className = 'p-2 bg-gray-800 rounded text-white';
+        li.className = 'flex items-center p-2 bg-gray-800 rounded text-white';
+
+        const dot = document.createElement('span');
+        dot.className = `h-2 w-2 rounded-full inline-block mr-2 ${
+          online ? 'bg-green-500' : 'bg-gray-500'
+        }`;
+
+        const name = document.createElement('span');
+        name.textContent = f.username;
+
+        li.append(dot, name);
         myFriendsUL.appendChild(li);
       });
     }
 
-    // 3) «Входящие запросы»
+    // ==== 4) Рендер «Входящие запросы» (без изменений) ====
     incomingUL.innerHTML = '';
     if (incoming.length === 0) {
       incomingUL.innerHTML = '<li>Нет новых запросов</li>';
@@ -75,8 +98,7 @@ export async function initFriends(): Promise<void> {
           try {
             await FriendsAPI.acceptFriendRequest(req.requester.id);
             await initFriends();
-          } catch (e) {
-            console.error(e);
+          } catch {
             btn.textContent = 'Ошибка';
           }
         };
@@ -85,16 +107,13 @@ export async function initFriends(): Promise<void> {
       });
     }
 
-    // 4) «Все пользователи»
+    // ==== 5) Рендер «Все пользователи» (без изменений) ====
     allUsersUL.innerHTML = '';
     if (users.length === 0) {
       allUsersUL.innerHTML = '<li>Никого не найдено</li>';
     } else {
       users.forEach((u: User) => {
-        // не показываем себя или уже в друзьях или отправивших вам заявку
-        if (u.id === selfId) return;
-        if (friendIds.has(u.id)) return;
-        if (incomingIds.has(u.id)) return;
+        if (u.id === selfId || friendIds.includes(u.id) || incomingIds.has(u.id)) return;
 
         const li = document.createElement('li');
         li.className = 'flex justify-between p-2 bg-gray-800 rounded';
@@ -111,8 +130,8 @@ export async function initFriends(): Promise<void> {
           btn.textContent = 'Запрос отправлен';
           try {
             await FriendsAPI.sendFriendRequest(u.id);
-          } catch (e: any) {
-            console.warn(e.message);
+          } catch {
+            /* ничего */
           }
         };
 
