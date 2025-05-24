@@ -1,7 +1,8 @@
 import { TournamentDto as TournamentDto } from "../dtos/TournamentDto";
 import { TournamentParticipantRepository } from "../repositories/TournamentParticipantRepository";
 import { TournamentRepository } from "../repositories/TournamentRepository";
-import { Tournament, TournamentStatus } from "@prisma/client";
+import { MessageType, Tournament, TournamentStatus } from "@prisma/client";
+import { ChatService } from "./ChatService";
 
 export interface CreateTournamentDto extends TournamentDto {
 	requiredPlayers: number;
@@ -10,8 +11,9 @@ export interface CreateTournamentDto extends TournamentDto {
 export class TournamentService {
 	constructor(
 		private tournmamentRepo = new TournamentRepository(),
-		private participantRepo = new TournamentParticipantRepository()
-	) {}
+		private participantRepo = new TournamentParticipantRepository(),
+		private chatService = new ChatService()
+		) {}
 
 	async createTournament(data: CreateTournamentDto): Promise<Tournament> {
 		//Players amount validation - only 4, 8 or 16 players allowed
@@ -72,6 +74,11 @@ export class TournamentService {
 				// Update the tournament status to "started"
 				const updated = await this.tournmamentRepo.updateStatus(tournament.id, TournamentStatus.READY); 
 				readyTournaments.push(tournament);
+
+				await this.notifyTournamentParticipants(
+					tournament.id,
+					`Турнир "${tournament.name}" сейчас начнется! ${participants.length} игроков играют.`
+				);
 			}
 		}
 		return readyTournaments;
@@ -88,4 +95,14 @@ export class TournamentService {
 	{
 		return this.tournmamentRepo.updateWinner(tournamentId, winnerId);
 	}
+
+	async notifyTournamentParticipants(tournamentId: number, message: string): 
+		Promise<void>
+	{
+		const participants = await this.participantRepo.findByTournament(tournamentId);
+		for (const participant of participants) {
+			await this.chatService.sendSystemMessage(participant.userId, message, MessageType.TOURNAMENT);
+		}
+	}
+
 }

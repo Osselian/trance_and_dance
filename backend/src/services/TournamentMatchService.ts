@@ -1,16 +1,18 @@
 import { TournamentMatchRepository } from "../repositories/TournamentMatchRepository"; 
 import { TournamentRepository } from "../repositories/TournamentRepository";
 import { MatchRepository } from "../repositories/MatchRepository";
-import { TournamentMatch, Match, MatchStatus, TournamentStatus} from "@prisma/client";
+import { TournamentMatch, Match, MatchStatus, TournamentStatus, MessageType} from "@prisma/client";
 import { TournamentBracketService } from "./TournamentBracketService";
 import { MatchWebSocketService } from "./MatchWebsocketService";
+import { ChatService } from "./ChatService";
 
 export class TournamentMatchService {
 	constructor(
 		private tmRepo = new TournamentMatchRepository(),
 		private matchRepo = new MatchRepository(),
 		private tournamentRepo = new TournamentRepository(),
-		private bracketService = new TournamentBracketService()
+		private bracketService = new TournamentBracketService(),
+		private chatService = new ChatService()
 	) {}
 
 	async getTournamentMatch(tournamentMatchId: number): Promise<TournamentMatch | null> {	
@@ -214,8 +216,39 @@ export class TournamentMatchService {
 			if (match.player1Id > 0 && match.player2Id > 0) {
 				const updatedMatch = await this.matchRepo.updateStatus(tm.matchId, MatchStatus.PENDING);
 				startedMatches.push(updatedMatch);
+
+				const tournament = await this.tournamentRepo.findById(tournamentId);
+				const message = `Ваш матч в турнире "${tournament?.name}" (раунд ${tm.round}) готов к началу!`;
+				await this.chatService.sendSystemMessage(match.player1Id, message, 'TOURNAMENT');
+				await this.chatService.sendSystemMessage(match.player2Id, message, 'TOURNAMENT');
 			}
 		}
 		return startedMatches;
 	}
+	
+	// Финальное уведомление при завершении турнира
+	async finalizeTournament(tournamentId: number, winnerId: number): Promise<void> {
+		const tournament = await this.tournamentRepo.findById(tournamentId);
+		if (!tournament) throw new Error('Tournament not found');
+
+		// Уведомление победителю
+		await this.chatService.sendSystemMessage(
+			winnerId,
+			`Поздравляем! Вы победили в турнире "${tournament.name}"!`,
+			'TOURNAMENT_WIN'
+		);
+
+		// Уведомления всем участникам о завершении турнира
+		const participants = await new TournamentParticipantRepository().findByTournament(tournamentId);
+		for (const participant of participants) {
+			if (participant.userId !== winnerId) {
+				await this.chatService.sendSystemMessage(
+					participant.userId,
+					`Турнир "${tournament.name}" завершен. Победитель: ${tournament.winner?.username || 'Неизвестный игрок'}`,
+					MessageType.TOURNAMENT
+				);
+			}
+		}
+	}
+
 }
