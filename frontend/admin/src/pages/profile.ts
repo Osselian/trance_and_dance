@@ -65,109 +65,116 @@ export const profileView = `
 import { AuthAPI } from '../api/auth';
 import type { Profile } from '../api/auth';
 import { BASE } from '../api/auth'
+import { UserAPI } from '../api/user';
 
-export async function profileInit() {
+export async function profileInit(userId?: number) {
+  // 1) Получаем свой профиль и определяем, чей показываем
+  const me = await AuthAPI.getProfile()
+  const isOwn = !userId || userId === me.id
 
-  const loginEl  = document.querySelector<HTMLInputElement>('input[name="login"]')!
-  const emailEl  = document.querySelector<HTMLInputElement>('input[name="email"]')!
-  const passEl   = document.querySelector<HTMLInputElement>('input[name="password"]')!
-  const statusEl = document.getElementById('status')!
-  const editBtn    = document.getElementById('edit-btn')! as HTMLButtonElement;
-  const saveBtn    = document.getElementById('save-btn')! as HTMLButtonElement;
-  const cancelBtn  = document.getElementById('cancel-btn')! as HTMLButtonElement;
-  const avatarImg  = document.getElementById('avatar-img')! as HTMLImageElement;
-  const avatarInput = document.getElementById('avatar-input')! as HTMLInputElement;
+  // 2) Загружаем профиль (свой или чужой)
+  const p: Profile = isOwn
+    ? me
+    : await UserAPI.getUserById(userId!)
 
-  let original: Profile;
-  let newAvatarFile: File | null = null;
+  // 3) Собираем DOM-элементы
+  const loginEl     = document.querySelector<HTMLInputElement>('input[name="login"]')!
+  const emailEl     = document.querySelector<HTMLInputElement>('input[name="email"]')!
+  const passEl      = document.querySelector<HTMLInputElement>('input[name="password"]')!
+  const statusEl    = document.getElementById('status')! as HTMLElement
+  const editBtn     = document.getElementById('edit-btn')! as HTMLButtonElement
+  const saveBtn     = document.getElementById('save-btn')! as HTMLButtonElement
+  const cancelBtn   = document.getElementById('cancel-btn')! as HTMLButtonElement
+  const avatarImg   = document.getElementById('avatar-img')! as HTMLImageElement
+  const avatarInput = document.getElementById('avatar-input')! as HTMLInputElement
 
-  async function loadProfile() {
-    const p = await AuthAPI.getProfile()        // GET /profile
-    original = p;
-    loginEl.value = p.username                  // логин
-    emailEl.value = p.email                     // e-mail
-    passEl.value  = '';                          // пароль не показываем
-    // avatarImg.src = p.avatarUrl;
-    const url = p.avatarUrl.startsWith('http')
-      ? p.avatarUrl
-      : BASE + p.avatarUrl
-
-    avatarImg.src = url
-    newAvatarFile  = null;
+  // 4) Если чужой профиль — прячем редактирование
+  if (!isOwn) {
+    editBtn.classList.add('hidden')
+    saveBtn.classList.add('hidden')
+    cancelBtn.classList.add('hidden')
+    avatarInput.classList.add('hidden')
   }
 
-  function setEditing(enabled:boolean) {
-    [loginEl, emailEl, passEl].forEach(el => {
-      if (enabled) el.removeAttribute('readonly');
-      else el.setAttribute('readonly', 'true');
-    });
-    editBtn.classList.toggle('hidden', enabled);
-    saveBtn.classList.toggle('hidden', !enabled);
-    cancelBtn.classList.toggle('hidden', !enabled);
-    avatarInput.classList.toggle('hidden', !enabled);
-    statusEl.textContent = '';
+  // 5) Заполняем
+  loginEl.value = p.username
+  emailEl.value = p.email
+  passEl.value  = ''
+  const avatarUrl = p.avatarUrl.startsWith('http')
+    ? p.avatarUrl
+    : BASE + p.avatarUrl
+  avatarImg.src = avatarUrl
+
+  let original = p
+  let newAvatarFile: File | null = null
+
+  // 6) Переключение режима
+  function setEditing(enabled: boolean) {
+    [loginEl, emailEl, passEl].forEach(el =>
+      enabled ? el.removeAttribute('readonly') : el.setAttribute('readonly','true')
+    )
+    // editBtn.classList.toggle('hidden', enabled)
+    saveBtn.classList.toggle('hidden', !enabled)
+    cancelBtn.classList.toggle('hidden', !enabled)
+    avatarInput.classList.toggle('hidden', !enabled)
+    statusEl.textContent = ''
   }
 
-  avatarInput.addEventListener('change', () => {
-    const file = avatarInput.files?.[0];
-    if (!file) return;
-    newAvatarFile = file;
-    const reader = new FileReader();
-    reader.onload = () => { avatarImg.src = reader.result as string; };
-    reader.readAsDataURL(file);
-  });
+  // 7) Слушатели — только для своего профиля
+  if (isOwn) {
+    avatarInput.addEventListener('change', () => {
+      const f = avatarInput.files?.[0]
+      if (!f) return
+      newAvatarFile = f
+      const reader = new FileReader()
+      reader.onload = () => { avatarImg.src = reader.result as string }
+      reader.readAsDataURL(f)
+    })
 
-  editBtn.addEventListener('click', () => {
-    setEditing(true);
-    loginEl.focus();
-  });
+    editBtn.addEventListener('click', () => {
+      setEditing(true)
+      loginEl.focus()
+    })
 
     cancelBtn.addEventListener('click', () => {
-    loginEl.value = original.username;
-    emailEl.value = original.email;
-    passEl.value  = '';
-    avatarImg.src = original.avatarUrl;
-    setEditing(false);
-  })
+      loginEl.value = original.username
+      emailEl.value = original.email
+      passEl.value  = ''
+      avatarImg.src = original.avatarUrl.startsWith('http')
+        ? original.avatarUrl
+        : BASE + original.avatarUrl
+      setEditing(false)
+    })
 
-  saveBtn.addEventListener('click', async () => {
-    try {
-      let avatarUrl = original.avatarUrl;
-    if (newAvatarFile) {
-      const respUrl = await AuthAPI.uploadAvatar(newAvatarFile)
-      avatarUrl = respUrl.startsWith('http') 
-        ? respUrl 
-        : BASE + respUrl
-    }
-      // if (newAvatarFile) {
-      //   const resp = await AuthAPI.uploadAvatar(newAvatarFile);
-      //   avatarUrl = resp.avatarUrl;
-      // }
+    saveBtn.addEventListener('click', async () => {
+      try {
+        let newAvatarUrl = original.avatarUrl
+        if (newAvatarFile) {
+          const u = await AuthAPI.uploadAvatar(newAvatarFile)
+          newAvatarUrl = u.startsWith('http') ? u : BASE + u
+        }
+        const payload: {
+          username: string
+          email:    string
+          password?: string
+          avatarUrl: string
+        } = {
+          username: loginEl.value,
+          email:    emailEl.value,
+          avatarUrl: newAvatarUrl
+        }
+        if (passEl.value.trim()) payload.password = passEl.value
 
-      const payload: { username: string; email: string; password?: string; avatarUrl: string } = {
-        username: loginEl.value,
-        email:    emailEl.value,
-        avatarUrl,
-      };
-      if (passEl.value.trim()) payload.password = passEl.value;
-
-      const updated = await AuthAPI.updateProfile(payload);
-      original = updated;
-      await loadProfile();
-      setEditing(false);
-      statusEl.textContent = 'Saved successfully!';
-    } catch (err: any) {
-      statusEl.textContent = 'Error saving: ' + err.message;
-    }
-  });
-
-  try {
-    await loadProfile();
-    setEditing(false);
-  } catch (err: any) {
-    if (err.message.includes('401')) {
-      location.hash = '#/login'; return;
-    }
-    statusEl.textContent = 'Failed to load profile';
+        const updated = await AuthAPI.updateProfile(payload)
+        original = updated
+        setEditing(false)
+        statusEl.textContent = 'Сохранено!'
+      } catch (err: any) {
+        statusEl.textContent = 'Ошибка: ' + err.message
+      }
+    })
   }
+
+  // 8) Изначально в режиме просмотра
+  setEditing(false)
 }

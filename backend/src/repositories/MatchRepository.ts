@@ -7,10 +7,34 @@ export class MatchRepository{
 		 return prisma.match.create({data: { player1Id: player1Id, player2Id: player2Id}});
 	}
 
+	async createEmptyMatch(): Promise<Match>{
+		return prisma.match.create({
+			data: {
+				player1Id: -1,
+				player2Id: -1,
+				status: MatchStatus.PENDING
+			}
+		});
+	}
+
 	async updateStatus(matchId: number,  newStatus: MatchStatus): Promise<Match> {
 		return prisma.match.update({
 			where: {id: matchId},
 			data: {status: newStatus}
+		});
+	}
+
+	async updatePlayer1(id: number, player1Id: number): Promise<Match> {
+		return prisma.match.update({
+			where: {id: id},
+			data: {player1Id}
+		});
+	}
+
+	async updatePlayer2(id: number, player2Id: number): Promise<Match> {
+		return prisma.match.update({
+			where: {id: id},
+			data: {player2Id}
 		});
 	}
 

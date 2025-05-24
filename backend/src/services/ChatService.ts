@@ -2,6 +2,7 @@ import { PagingDto } from "../dtos/PagingDto";
 import { ChatMessageRepository } from "../repositories/ChatMessageRepository";
 import { BlockService } from "./BlockService";
 import { MessageType } from "@prisma/client";
+import { ConversationRow } from '../repositories/ChatMessageRepository';
 
 export class ChatService {
 	constructor(
@@ -46,4 +47,8 @@ export class ChatService {
 		const SYSTEM_USER_ID = 0;
 		return this.chatRepo.sendMessage(SYSTEM_USER_ID, receiverId, content, type);
 	}
+
+  public async listConversations(userId: number): Promise<ConversationRow[]> {
+    return this.chatRepo.listConversations(userId);
+  }
 }

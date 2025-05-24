@@ -74,13 +74,19 @@ model MatchMakingRequest {
 }
 
 model Tournament {
-	id           Int                      @id @default(autoincrement())
-	name         String
-	description  String?
-	startDate    DateTime
-	endDate      DateTime
-	participants TournamentParticipant[]
-	matches      TournamentMatch[]
+	id              Int                      @id @default(autoincrement())
+	name            String
+	description     String?
+	startDate       DateTime
+	endDate         DateTime
+	status	        TournamentStatus         @default(REGISTRATION)
+	requiredPlayers Int                      @default(8)
+	currentRound    Int                      @default(1)
+	winnerId       Int?
+	participants    TournamentParticipant[]
+	matches         TournamentMatch[]
+
+	@@index([status])
 }
 
 model TournamentMatch{
@@ -91,9 +97,12 @@ model TournamentMatch{
 	tournamentId Int
 	round        Int
 	bracketPos   Int
+	nextMatchId  Int?
+	winnerId     Int?
 	createdAt    DateTime   @default(now())
 
 	@@index([tournamentId, round])
+	@@index([nextMatchId])
 }
 
 model TournamentParticipant {
@@ -164,10 +173,18 @@ enum MatchStatus {
 	PENDING 
 	ONGOING
 	COMPLETED
+	CANCELLED
 }
 
 enum MessageType {
 	TEXT
 	INVITE_GAME
 	TOURNAMENT
+}
+
+enum TournamentStatus {
+	REGISTRATION
+	READY
+	ONGOING
+	COMPLETED
 }

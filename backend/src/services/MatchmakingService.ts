@@ -13,6 +13,10 @@ export class MatchmakingService {
 		private matchRepo = new MatchRepository()
 	) {}
 
+	async findMatchById(id: number): Promise<Match| null> {
+		return this.matchRepo.findById(id);
+	}
+
 	async joinQueue (userId: number): Promise<void> {
 		const existRequest = await this.mmReqRepo.findByUser(userId);
 		if (existRequest != null)

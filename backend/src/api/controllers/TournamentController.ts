@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
-import { TournamentService } from '../../services/TournamentService';
-import { TournamentDto } from '../../dtos/TournamentDto';
+import { TournamentService, CreateTournamentDto } from '../../services/TournamentService';
 import { parseTournamentDto } from '../../utils/parseTournamentDto';
 
 export class TournamentController {
@@ -14,6 +13,7 @@ export class TournamentController {
 		this.fastify.post('', this.createTournament.bind(this));
 		this.fastify.put('/:id', this.updateTournament.bind(this));
 		this.fastify.delete('/:id', this.removeTournament.bind(this));
+		this.fastify.get('/:id/status', this.checkTournamentStatus.bind(this));
 	}
 
 	public registerRoutes(): void {
@@ -22,10 +22,21 @@ export class TournamentController {
 	}
 
 	private async createTournament(req: FastifyRequest, reply: FastifyReply) {
-		const dto: TournamentDto = parseTournamentDto(req.body as any);
 		try {
-			const tour = await this.tournamentService.createTournament(dto);
-			reply.status(201).send(tour);
+			const baseDto = parseTournamentDto(req.body as any);
+			const requiredPlayers = parseInt((req.body as any).requiredPlayers || '8', 10);
+
+			if (![4, 8, 16].includes(requiredPlayers)) 
+				return reply.status(400).send({ message: 
+					'Required players must be 4, 8 or 16' });
+			
+			const dto: CreateTournamentDto = {
+				...baseDto,
+				requiredPlayers
+			};
+
+			const tournament = await this.tournamentService.createTournament(dto);
+			reply.status(201).send(tournament);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error';
 			reply.status(400).send({ message: msg});
@@ -47,7 +58,7 @@ export class TournamentController {
 
 	private async updateTournament(req: FastifyRequest, reply: FastifyReply) {
 		const id = Number((req.params as any).id);
-		const dto: TournamentDto = parseTournamentDto(req.body as any);
+		const dto = parseTournamentDto(req.body as any);
 		try {
 			const tour = await this.tournamentService.updateTournament(id, dto);
 			reply.send(tour);
@@ -64,6 +75,18 @@ export class TournamentController {
 			reply.send(tour);
 		}
 		catch (err){
+			const msg = err instanceof Error ? err.message : 'Error';
+			reply.status(400).send({ message: msg});
+		}
+	}
+
+	private async checkTournamentStatus(req: FastifyRequest, reply: FastifyReply) {
+		const id = Number((req.params as any).id);
+		try {
+			const status = await this.tournamentService.checkTournamentStatus(id);
+			reply.send(status);
+		}
+		catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error';
 			reply.status(400).send({ message: msg});
 		}

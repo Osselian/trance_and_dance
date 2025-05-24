@@ -56,8 +56,8 @@ export function registerRoutes(fastify: FastifyInstance) {
 	}, { prefix: '/tournament' });
 
 	const matchWebSocketController = new MatchWebSocketController(
-		fastify, new MatchWebSocketService());
-	matchWebSocketController.registerRoutes();
+		fastify);
+	matchWebSocketController.registerRoutes(new MatchWebSocketService());
 }
 
 function registerSecure(
