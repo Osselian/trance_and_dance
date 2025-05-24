@@ -11,8 +11,14 @@ services:
       - ./backend/certs:/app/certs
     ports:
       - "3000:3000"
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
     networks:
       - monitoring-tier
+    depends_on:
+      - logstash
 
   admin-frontend:
     build:
@@ -137,3 +143,4 @@ volumes:
 
 networks:
   monitoring-tier:
+    driver: bridge

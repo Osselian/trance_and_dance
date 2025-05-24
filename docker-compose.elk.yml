@@ -29,6 +29,7 @@ services:
       - ./devops/logstash/pipeline:/usr/share/logstash/pipeline
     ports:
       - "12201:12201/udp"
+      - "9600:9600/tcp"
     depends_on:
       - elasticsearch
     environment:
@@ -42,3 +43,4 @@ volumes:
 
 networks:
   monitoring-tier:
+    driver: bridge
