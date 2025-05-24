@@ -10,7 +10,7 @@ export class Game {
 	private score: Score;
 	private targetPaddlePositions: { player: number; computer: number } | null = null;
 	private gameState: string = 'READY'; // Возможные значения: 'READY', 'PLAYING', 'PAUSED', 'GAME_OVER'
-  	private isWaitingForBallSpawn: boolean = false;
+  	private isWaitingForBallSpawn: number = 3;
   	private lastScoreTime: number = 0;
 	private readonly SCORE_DELAY = 1000; // 1 second delay
 
@@ -52,7 +52,7 @@ export class Game {
 		this.resetBall();
 		this.targetPaddlePositions = null;
 		this.gameState = 'READY';
-		this.isWaitingForBallSpawn = false;
+		this.isWaitingForBallSpawn = 3;
 	}		
 
 	public handlePlayerInput(direction: string, playerId: number): void {
@@ -73,6 +73,7 @@ export class Game {
 	public getState(): GamesStateDto {
 		const state = 
 		{
+			type: "gameState",
 			ballPos: this.isWaitingForBallSpawn ? null : this.ball.getPosition(),
 			player1PaddlePos: this.player1Paddle.getPosition(),
 			player2PaddlePos: this.player2Paddle.getPosition(),
@@ -156,27 +157,48 @@ export class Game {
 				this.score.incrementOpponent();
 				this.lastScoreTime = currentTime;
 				this.ball.hide();
-				this.isWaitingForBallSpawn = true;
+				this.isWaitingForBallSpawn = 3;
 				this.startPaddleReset();
 			} else if (ballPos.x + ballSize / 2 >= 800) {
 				this.score.incrementPlayer();
 				this.lastScoreTime = currentTime;
 				this.ball.hide();
-				this.isWaitingForBallSpawn = true;
+				this.isWaitingForBallSpawn = 3;
 				this.startPaddleReset();
 			}
 		}
 
-		// Reset ball after delay
-		if (this.isWaitingForBallSpawn && currentTime - this.lastScoreTime >= this.SCORE_DELAY) {
-			this.resetBall();
-			this.lastScoreTime = 0;
-			this.isWaitingForBallSpawn = false;
-			this.targetPaddlePositions = null;
-		}
+		// Добавляем обратный отсчет
+		this.setCountDown(currentTime);
 
 		if (this.score.hasWinner()) {
 			this.stopGame();
+		}
+	}
+
+	private setCountDown(currentTime: number) {
+		if (this.isWaitingForBallSpawn) {
+			const timeElapsed = currentTime - this.lastScoreTime;
+			const segmentDuration = this.SCORE_DELAY / 3; // Делим на 3 сегмента
+
+
+			// Обновляем значение счетчика в зависимости от прошедшего времени
+			if (timeElapsed < segmentDuration) {
+				// Первая треть времени - значение 3
+				this.isWaitingForBallSpawn = 3;
+			} else if (timeElapsed < segmentDuration * 2) {
+				// Вторая треть времени - значение 2
+				this.isWaitingForBallSpawn = 2;
+			} else if (timeElapsed < this.SCORE_DELAY) {
+				// Последняя треть времени - значение 1
+				this.isWaitingForBallSpawn = 1;
+			} else {
+				// По истечении всего времени, сбрасываем мяч
+				this.resetBall();
+				this.lastScoreTime = 0;
+				this.isWaitingForBallSpawn = 0;
+				this.targetPaddlePositions = null;
+			}
 		}
 	}
 
