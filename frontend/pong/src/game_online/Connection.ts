@@ -1,4 +1,4 @@
-const socket = new WebSocket('ws://localhost:3000/ws');
+export const socket = new WebSocket('ws://localhost:3000/ws');
 
 socket.onopen = () => {
     console.log('WebSocket connection established');
@@ -34,3 +34,19 @@ window.addEventListener('beforeunload', () => {
         socket.close();
     }
 });
+
+// Функция для отправки сообщений через WebSocket
+export function sendMessage(type: string, data: any) {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type, data }));
+    } else {
+        console.warn('WebSocket is not open. Message not sent:', { type, data });
+    }
+}
+
+// Функция для закрытия соединения
+export function closeConnection() {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+}
