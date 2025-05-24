@@ -111,7 +111,7 @@ export class GameService {
 
 		const gameStopMessage = {
 			type: 'gameStop',
-			reason: 'playerDisconnected',
+			reason: 'playerDisconnected',//убрать
 			timeStamp: Date.now()
 		};
 		this.clients.forEach((client) => {

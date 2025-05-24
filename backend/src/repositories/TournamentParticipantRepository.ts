@@ -3,9 +3,11 @@ import { PrismaClient, TournamentParticipant } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export class TournamentParticipantRepository {
-	async register(tournamentId: number, userId: number): Promise<TournamentParticipant> {
+	async register(tournamentId: number, userId: number, tournamentName?: string): 
+		Promise<TournamentParticipant> 
+	{
 		return prisma.tournamentParticipant.create({
-			data: { tournamentId, userId}
+			data: { tournamentId, userId, tournamentName}
 		});
 	}
 
