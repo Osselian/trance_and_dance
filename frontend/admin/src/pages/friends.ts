@@ -28,9 +28,9 @@ export async function initFriends(): Promise<void> {
   const incomingUL  = document.getElementById('incoming-requests-list')! as HTMLUListElement;
 
   // показываем «Загрузка…»
-  allUsersUL.innerHTML  = '<li>Загрузка…</li>';
-  myFriendsUL.innerHTML = '<li>Загрузка…</li>';
-  incomingUL.innerHTML  = '<li>Загрузка…</li>';
+  allUsersUL.innerHTML  = '<li>Loading…</li>';
+  myFriendsUL.innerHTML = '<li>Loading…</li>';
+  incomingUL.innerHTML  = '<li>Loading…</li>';
 
   try {
     // ==== 1) Получаем базовые списки ====
@@ -53,15 +53,14 @@ export async function initFriends(): Promise<void> {
         const statuses: UserStatus[] = await FriendsAPI.getOnlineStatuses(friendIds);
         statusMap = new Map(statuses.map(s => [s.id, s.online]));
       } catch (err) {
-        console.warn('Не удалось получить статусы онлайн:', err);
-        // statusMap останется пустым → все offline
+        console.warn('Failed to get online statuses:', err);
       }
     }
 
     // ==== 3) Рендер «Мои друзья» с индикатором ====
     myFriendsUL.innerHTML = '';
     if (friends.length === 0) {
-      myFriendsUL.innerHTML = '<li>У вас пока нет друзей</li>';
+      myFriendsUL.innerHTML = '<li>You dont have any friends yet.</li>';
     } else {
       friends.forEach((f: Friend) => {
         const online = statusMap.get(f.id) ?? false;
@@ -84,7 +83,7 @@ export async function initFriends(): Promise<void> {
     // ==== 4) Рендер «Входящие запросы» (без изменений) ====
     incomingUL.innerHTML = '';
     if (incoming.length === 0) {
-      incomingUL.innerHTML = '<li>Нет новых запросов</li>';
+      incomingUL.innerHTML = '<li>No new requests</li>';
     } else {
       incoming.forEach((req: IncomingRequest) => {
         const li = document.createElement('li');
@@ -99,7 +98,7 @@ export async function initFriends(): Promise<void> {
             await FriendsAPI.acceptFriendRequest(req.requester.id);
             await initFriends();
           } catch {
-            btn.textContent = 'Ошибка';
+            btn.textContent = 'Error';
           }
         };
         li.appendChild(btn);
@@ -110,7 +109,7 @@ export async function initFriends(): Promise<void> {
     // ==== 5) Рендер «Все пользователи» (без изменений) ====
     allUsersUL.innerHTML = '';
     if (users.length === 0) {
-      allUsersUL.innerHTML = '<li>Никого не найдено</li>';
+      allUsersUL.innerHTML = '<li>No one found</li>';
     } else {
       users.forEach((u: User) => {
         if (u.id === selfId || friendIds.includes(u.id) || incomingIds.has(u.id)) return;
@@ -127,7 +126,7 @@ export async function initFriends(): Promise<void> {
         btn.className = 'px-2 py-1 bg-blue-500 text-white rounded';
         btn.onclick = async () => {
           btn.disabled = true;
-          btn.textContent = 'Запрос отправлен';
+          btn.textContent = 'Request sent';
           try {
             await FriendsAPI.sendFriendRequest(u.id);
           } catch {
@@ -141,9 +140,9 @@ export async function initFriends(): Promise<void> {
     }
 
   } catch (e) {
-    console.error('Ошибка инициализации:', e);
-    allUsersUL.innerHTML  = '<li class="text-red-500">Ошибка</li>';
-    myFriendsUL.innerHTML = '<li class="text-red-500">Ошибка</li>';
-    incomingUL.innerHTML  = '<li class="text-red-500">Ошибка</li>';
+    console.error('Initialization error:', e);
+    allUsersUL.innerHTML  = '<li class="text-red-500">Error</li>';
+    myFriendsUL.innerHTML = '<li class="text-red-500">Error</li>';
+    incomingUL.innerHTML  = '<li class="text-red-500">Error</li>';
   }
 }

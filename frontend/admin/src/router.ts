@@ -49,11 +49,45 @@ async function mountRoute() {
       init: () => profileInit(id)     // dynamic profile
     }
   }
-  else if (location.hash.startsWith('#/play/quick/')) {
-    const matchId = location.hash.split('/')[3]
+if (location.hash.startsWith('#/play/quick/')) {
+    // 1) достаём matchId из хэша
+    const matchId = location.hash.split('/')[3]!
     route = {
       view: '',
-      init: () => { /* …quick game init… */ }
+      init: () => {
+        // 2) рендерим экран игры (из startQuickGame будет вызван renderGameScreen)
+        // сразу открываем WS-соединение на ваш бекенд
+        const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
+        const ws = new WebSocket(
+          `${wsProtocol}://${location.host}/matchmaking/ws`
+        )
+
+        // 3) после установки соединения сообщаем серверу, в какую комнату
+        ws.addEventListener('open', () => {
+          ws.send(JSON.stringify({
+            action: 'joinRoom',
+            matchId
+          }))
+        })
+
+        // 4) ждём сообщения от сервера и при type==='start' запускаем игру
+        ws.addEventListener('message', ({ data }) => {
+          const msg = JSON.parse(data)
+          if (msg.type === 'start') {
+            // Теперь внутри renderGameScreen + Game-класса
+            // появится канвас, передадим socket и настройки в логику
+            startQuickGame(ws, msg.settings)
+          }
+        })
+
+        // на ошибку/закрытие WS можно повесить логику clean-up
+        ws.addEventListener('error', () => {
+          alert('WebSocket error for quick game')
+        })
+        ws.addEventListener('close', () => {
+          console.warn('Quick game socket closed prematurely')
+        })
+      }
     }
   }
   else {
