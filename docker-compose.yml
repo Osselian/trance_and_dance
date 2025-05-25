@@ -1,7 +1,9 @@
 version: '3.8'
 
 services:
+
   backend:
+    container_name: backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -12,10 +14,18 @@ services:
     ports:
       - "3000:3000"
       - "5555:5555"
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "{{.ImageName}}/{{.FullID}}"
     networks:
       - monitoring-tier
+    depends_on:
+      - logstash
 
   admin-frontend:
+    container_name: admin-frontend
     build:
       context: ./frontend
       dockerfile: admin/Dockerfile
@@ -34,6 +44,7 @@ services:
       - monitoring-tier
 
   pong-frontend:
+    container_name: pong-frontend
     build:
       context: ./frontend/pong
       dockerfile: Dockerfile
@@ -138,3 +149,4 @@ volumes:
 
 networks:
   monitoring-tier:
+    driver: bridge
