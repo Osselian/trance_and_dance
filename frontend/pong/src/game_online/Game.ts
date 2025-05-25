@@ -47,30 +47,108 @@ export class Game {
       ? GameState.START
       : GameState.MODE_SELECTION;
 
-    // Set up event listeners
-    this.setupEventListeners();
   }
 
   public start(): void {
-    this.hideMessage(); // Hide the message element since we're drawing on canvas
-    this.gameLoop();
-  }
+    // Set up WebSocket message handler
+    this.ws.addEventListener('message', (event) => {
+      const message = JSON.parse(event.data);
+      
+      switch (message.type) {
+        case 'connection':
+          console.log('Connected to game server');
+          break;
+          
+        case 'playerConnected':
+          console.log('Opponent connected');
+          break;
+          
+        case 'ping':
+          // send back pong
+          this.ws.send(JSON.stringify({ type: 'pong' }));
+          break;
+          
+        case 'error':
+          console.error('Server error:', message.message);
+          break;
+          
+        case 'playerDisconnected':
+          console.log('Opponent disconnected:', message.message);
+          break;
+          
+        case 'readyStatus':
+          console.log('A player is ready to join the game');
+          break;        
+        case 'gameStart':
+          this.gameState = GameState.PLAYING;
+          this.isGameStartCountdown = true;
+          this.lastScoreTime = performance.now();
+          break;          
+        case 'gameStop':
+          this.gameState = GameState.GAME_OVER;
+          break;          
+        case 'gameState':
+          // Update game state with received data
+          if (message.ballPos) {
+            this.ball.setPosition(message.ballPos.x, message.ballPos.y);
+          }
+          if (message.player1PaddlePos) {
+            this.playerPaddle.setPosition(message.player1PaddlePos.y);
+          }
+          if (message.player2PaddlePos) {
+            this.computerPaddle.setPosition(message.player2PaddlePos.y);
+          }
+          if (message.score) {
+            this.score.setScore(message.score.player1, message.score.player2);
+          }
+          this.isWaitingForBallSpawn = message.isWaitingForBallSpawn;
+          this.lastScoreTime = message.lastScoreTime;
+          break;
+      }
+      
+      // Redraw the game state after processing the message
+      this.draw();
+    });
 
-  private update(deltaTime: number): void {
-    if (this.gameState !== GameState.PLAYING) return;
+    // Set up keyboard input handler
+    document.addEventListener('keydown', (event) => {
+      if (this.gameState !== GameState.PLAYING) return;
 
-    this.updatePaddlePositions(deltaTime);
-    this.playerPaddle.update(this.canvas.height, deltaTime);
-    this.ball.update(this.canvas.width, this.canvas.height, deltaTime);
+      let direction: 'up' | 'down' | null = null;
 
-    if (this.gameMode === GameMode.VS_COMPUTER) {
-      this.updateComputerPaddle(deltaTime);
-    } else {
-      this.computerPaddle.update(this.canvas.height, deltaTime);
-    }
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          direction = 'up';
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          direction = 'down';
+          break;
+      }
 
-    this.checkCollisions();
-    this.checkScoring();
+      if (direction) {
+        this.ws.send(JSON.stringify({
+          type: 'move',
+          direction: direction
+        }));
+      }
+    });
+
+    // Start the game loop
+    const gameLoop = (timestamp: number) => {
+      const deltaTime = timestamp - this.lastFrameTime;
+      this.lastFrameTime = timestamp;
+
+      this.update(deltaTime);
+      this.draw();
+
+      this.animationFrameId = requestAnimationFrame(gameLoop);
+    };
+
+    this.animationFrameId = requestAnimationFrame(gameLoop);
   }
 
   private draw(): void {

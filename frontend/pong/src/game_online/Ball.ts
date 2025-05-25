@@ -8,6 +8,9 @@ export class Ball {
 
   constructor() {}
 
+  public setPosition(x: number, y: number): void {
+    this.position = { x, y };
+  }
 
   public draw(ctx: CanvasRenderingContext2D): void {
     if (!this.isVisible) return;
