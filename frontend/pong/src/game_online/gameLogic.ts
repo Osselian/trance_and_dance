@@ -19,14 +19,15 @@ function renderGameScreen() {
    `;
 }
 
-export function startVsComputer() {
-  renderGameScreen();
-  const game = new Game(GameMode.VS_COMPUTER);
-  game.start();
-}
 
-export function start1v1() {
-  renderGameScreen();
-  const game = new Game(GameMode.VS_PLAYER);
+/**
+ * Запускает игру по найденному матчу.
+ * @param ws — открытое соединение WebSocket
+ * @param settings — настройки, пришедшие от сервера
+ */
+
+ export function startQuickGame(ws: WebSocket, settings: any) {
+   renderGameScreen();
+  const game = new Game(GameMode.QUICK, ws,settings);
   game.start();
 }

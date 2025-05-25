@@ -34,6 +34,18 @@ export const GameMode = {
 export type GameMode = typeof GameMode[keyof typeof GameMode]
 
 export interface GameScore {
-  player: number;
-  computer: number;
-} 
+  player: number; // left paddle
+  computer: number; // right paddle (may be a player or a computer)
+}
+
+export interface GamesStateDto {
+	ballPos: Position;
+	player1PaddlePos: Position;
+	player2PaddlePos: Position;
+	score: { player: number; opponent: number;};
+	gameState: string;
+	isWaitingForBallSpawn: boolean;
+	lastScoreTime: number;
+	hasWinner: boolean;
+	winnerId: number | null;
+}

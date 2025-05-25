@@ -1,3 +1,5 @@
+import { AuthAPI } from '../api/auth';
+
 export function renderNavbar() {
   const header = document.getElementById('navbar')!;
   const token  = localStorage.getItem('token');
@@ -14,7 +16,15 @@ export function renderNavbar() {
         </div>
       </nav>
     `;
-    document.getElementById('logout-btn')!.addEventListener('click', () => {
+    const btn = document.getElementById('logout-btn')!;
+    btn.addEventListener('click', async () => {
+      try {
+        // 1) Сообщаем серверу, что сейчас логаутимся
+        await AuthAPI.logout();
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+      // 2) Только после этого убираем токен и редиректим
       localStorage.removeItem('token');
       window.dispatchEvent(new Event('auth-changed'));
       location.hash = '#/login';

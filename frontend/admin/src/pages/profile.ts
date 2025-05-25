@@ -7,8 +7,8 @@ export const profileView = `
       <div class="relative w-24 h-24 rounded-full overflow-hidden border">
         <img
           id="avatar-img"
-          src="/img/default-avatar.jpg"
-          onerror="this.onerror=null;this.src='/img/default-avatar.jpg'"
+          src="/img/default_avatar.jpg"
+          onerror="this.onerror=null;this.src='/img/default_avatar.jpg'"
           class="w-full h-full object-cover"
         />
         <input
@@ -32,7 +32,7 @@ export const profileView = `
           <tr>
             <td class="table-cell-label">Email</td>
             <td class="table-cell-input">
-              <input name="email" class="input" readonly />
+              <input name="email" type="email" class="input" readonly>
             </td>
           </tr>
           <tr>
@@ -68,113 +68,128 @@ import { BASE } from '../api/auth'
 import { UserAPI } from '../api/user';
 
 export async function profileInit(userId?: number) {
-  // 1) Получаем свой профиль и определяем, чей показываем
-  const me = await AuthAPI.getProfile()
-  const isOwn = !userId || userId === me.id
+  // 1. Вначале только получение профиля и refresh-логика
+  let me: Profile;
+  try {
+    me = await AuthAPI.getProfile();
+  } catch (err: any) {
+    if (err.message === 'Unauthorized') {
+      try {
+        const { accessToken } = await AuthAPI.refresh();
+        localStorage.setItem('token', accessToken);
+        // повторяем попытку получить профиль
+        me = await AuthAPI.getProfile();
+      } catch {
+        // если и refresh не прокатил — отправляем на логин
+        window.location.href = '/login';
+        return;
+      }
+    } else {
+      throw err;
+    }
+  }
 
-  // 2) Загружаем профиль (свой или чужой)
+  // 2. Определяем, чей профиль
+  const isOwn = !userId || userId === me.id;
   const p: Profile = isOwn
     ? me
-    : await UserAPI.getUserById(userId!)
+    : await UserAPI.getUserById(userId!);
 
-  // 3) Собираем DOM-элементы
-  const loginEl     = document.querySelector<HTMLInputElement>('input[name="login"]')!
-  const emailEl     = document.querySelector<HTMLInputElement>('input[name="email"]')!
-  const passEl      = document.querySelector<HTMLInputElement>('input[name="password"]')!
-  const statusEl    = document.getElementById('status')! as HTMLElement
-  const editBtn     = document.getElementById('edit-btn')! as HTMLButtonElement
-  const saveBtn     = document.getElementById('save-btn')! as HTMLButtonElement
-  const cancelBtn   = document.getElementById('cancel-btn')! as HTMLButtonElement
-  const avatarImg   = document.getElementById('avatar-img')! as HTMLImageElement
-  const avatarInput = document.getElementById('avatar-input')! as HTMLInputElement
+  // 3. Собираем элементы и функцию setEditing
+  const loginEl     = document.querySelector<HTMLInputElement>('input[name="login"]')!;
+  const emailEl     = document.querySelector<HTMLInputElement>('input[name="email"]')!;
+  const passEl      = document.querySelector<HTMLInputElement>('input[name="password"]')!;
+  const statusEl    = document.getElementById('status')! as HTMLElement;
+  const editBtn     = document.getElementById('edit-btn')! as HTMLButtonElement;
+  const saveBtn     = document.getElementById('save-btn')! as HTMLButtonElement;
+  const cancelBtn   = document.getElementById('cancel-btn')! as HTMLButtonElement;
+  const avatarImg   = document.getElementById('avatar-img')! as HTMLImageElement;
+  const avatarInput = document.getElementById('avatar-input')! as HTMLInputElement;
 
-  // 4) Если чужой профиль — прячем редактирование
-  if (!isOwn) {
-    editBtn.classList.add('hidden')
-    saveBtn.classList.add('hidden')
-    cancelBtn.classList.add('hidden')
-    avatarInput.classList.add('hidden')
-  }
-
-  // 5) Заполняем
-  loginEl.value = p.username
-  emailEl.value = p.email
-  passEl.value  = ''
-  const avatarUrl = p.avatarUrl.startsWith('http')
-    ? p.avatarUrl
-    : BASE + p.avatarUrl
-  avatarImg.src = avatarUrl
-
-  let original = p
-  let newAvatarFile: File | null = null
-
-  // 6) Переключение режима
   function setEditing(enabled: boolean) {
     [loginEl, emailEl, passEl].forEach(el =>
-      enabled ? el.removeAttribute('readonly') : el.setAttribute('readonly','true')
-    )
-    // editBtn.classList.toggle('hidden', enabled)
-    saveBtn.classList.toggle('hidden', !enabled)
-    cancelBtn.classList.toggle('hidden', !enabled)
-    avatarInput.classList.toggle('hidden', !enabled)
-    statusEl.textContent = ''
+      enabled ? el.removeAttribute('readonly') : el.setAttribute('readonly', 'true')
+    );
+    saveBtn.classList.toggle('hidden', !enabled);
+    cancelBtn.classList.toggle('hidden', !enabled);
+    avatarInput.classList.toggle('hidden', !enabled);
+    statusEl.textContent = '';
   }
 
-  // 7) Слушатели — только для своего профиля
+  // 4. Если это чужой профиль — спрячем кнопки
+  if (!isOwn) {
+    editBtn.classList.add('hidden');
+    saveBtn.classList.add('hidden');
+    cancelBtn.classList.add('hidden');
+    avatarInput.classList.add('hidden');
+  }
+
+  // 5. Заполняем поля
+  loginEl.value = p.username;
+  emailEl.value = p.email;
+  passEl.value  = '';
+  avatarImg.src = p.avatarUrl.startsWith('http') ? p.avatarUrl : BASE + p.avatarUrl;
+
+  let original = p;
+  let newAvatarFile: File | null = null;
+
+  // 6. Навешиваем слушатели, только для своего профиля
   if (isOwn) {
     avatarInput.addEventListener('change', () => {
-      const f = avatarInput.files?.[0]
-      if (!f) return
-      newAvatarFile = f
-      const reader = new FileReader()
-      reader.onload = () => { avatarImg.src = reader.result as string }
-      reader.readAsDataURL(f)
-    })
+      const f = avatarInput.files?.[0];
+      if (!f) return;
+      newAvatarFile = f;
+      const reader = new FileReader();
+      reader.onload = () => { avatarImg.src = reader.result as string; };
+      reader.readAsDataURL(f);
+    });
 
     editBtn.addEventListener('click', () => {
-      setEditing(true)
-      loginEl.focus()
-    })
+      setEditing(true);
+      loginEl.focus();
+    });
 
     cancelBtn.addEventListener('click', () => {
-      loginEl.value = original.username
-      emailEl.value = original.email
-      passEl.value  = ''
-      avatarImg.src = original.avatarUrl.startsWith('http')
-        ? original.avatarUrl
-        : BASE + original.avatarUrl
-      setEditing(false)
-    })
+      loginEl.value = original.username;
+      emailEl.value = original.email;
+      passEl.value  = '';
+      avatarImg.src = original.avatarUrl.startsWith('http') ? original.avatarUrl : BASE + original.avatarUrl;
+      setEditing(false);
+    });
 
     saveBtn.addEventListener('click', async () => {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value)) {
+        statusEl.textContent = 'Incorrect email address';
+        return;
+      }
       try {
-        let newAvatarUrl = original.avatarUrl
+        let newAvatarUrl = original.avatarUrl;
         if (newAvatarFile) {
-          const u = await AuthAPI.uploadAvatar(newAvatarFile)
-          newAvatarUrl = u.startsWith('http') ? u : BASE + u
+          const u = await AuthAPI.uploadAvatar(newAvatarFile);
+          newAvatarUrl = u.startsWith('http') ? u : BASE + u;
         }
         const payload: {
-          username: string
-          email:    string
-          password?: string
-          avatarUrl: string
+          username: string;
+          email:    string;
+          password?: string;
+          avatarUrl: string;
         } = {
           username: loginEl.value,
           email:    emailEl.value,
-          avatarUrl: newAvatarUrl
-        }
-        if (passEl.value.trim()) payload.password = passEl.value
+          avatarUrl: newAvatarUrl,
+        };
+        if (passEl.value.trim()) payload.password = passEl.value;
 
-        const updated = await AuthAPI.updateProfile(payload)
-        original = updated
-        setEditing(false)
-        statusEl.textContent = 'Сохранено!'
+        const updated = await AuthAPI.updateProfile(payload);
+        original = updated;
+        setEditing(false);
+        statusEl.textContent = 'Saved!';
       } catch (err: any) {
-        statusEl.textContent = 'Ошибка: ' + err.message
+        statusEl.textContent = 'Error: ' + err.message;
       }
-    })
+    });
   }
 
-  // 8) Изначально в режиме просмотра
-  setEditing(false)
+  // 7. Изначально — в режиме просмотра
+  setEditing(false);
 }
