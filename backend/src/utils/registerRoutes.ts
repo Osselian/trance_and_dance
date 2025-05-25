@@ -4,7 +4,7 @@ import { UserController } from "../api/controllers/UserController";
 import { MatchmakingController } from "../api/controllers/MatchmakingController";
 import { MatchController } from "../api/controllers/MatchController";
 import { TournamentController } from "../api/controllers/TournamentController";
-import { TournamentMatchController } from "../api/controllers/TournamentMatchController";
+// import { TournamentMatchController } from "../api/controllers/TournamentMatchController";
 import { TournamentParticipantController } from "../api/controllers/TournamentParticipantController";
 import { BlockController } from "../api/controllers/BlockController";
 import { ChatController } from "../api/controllers/ChatController";
@@ -26,7 +26,7 @@ export function registerRoutes(fastify: FastifyInstance) {
 	registerSecure(fastify, '/matchmaking', MatchmakingController, 'registerProtectedRoutes');
 	registerSecure(fastify, '/match', MatchController, 'registerRoutes');
 	registerSecure(fastify, '/tournament', TournamentController, 'registerSecureRoutes');
-	registerSecure(fastify, '/tournament', TournamentMatchController, 'registerSecureRoutes');
+	// registerSecure(fastify, '/tournament', TournamentMatchController, 'registerSecureRoutes');
 	registerSecure(fastify, '/tournament', TournamentParticipantController, 'registerSecureRoutes');
 	registerSecure(fastify, '/block', BlockController, 'registerSecureRoutes');
 	registerSecure(fastify, '/chat', ChatController, 'registerSecureRoutes');
@@ -48,10 +48,10 @@ export function registerRoutes(fastify: FastifyInstance) {
 		mmCtrl.registerRoutes();
 	}, { prefix: '/tournament' });
 
-	fastify.register(async (app) => {
-		const mmCtrl = new TournamentMatchController(app);
-		mmCtrl.registerRoutes();
-	}, { prefix: '/tournament' });
+	// fastify.register(async (app) => {
+	// 	const mmCtrl = new TournamentMatchController(app);
+	// 	mmCtrl.registerRoutes();
+	// }, { prefix: '/tournament' });
 
 	fastify.register(async (app) => {
 		const mmCtrl = new TournamentParticipantController(app);

@@ -14,7 +14,7 @@ export class TournamentController {
 		this.fastify.post('', this.createTournament.bind(this));
 		this.fastify.put('/:id', this.updateTournament.bind(this));
 		this.fastify.delete('/:id', this.removeTournament.bind(this));
-		this.fastify.get('/:id/status', this.checkTournamentStatus.bind(this));
+		// this.fastify.get('/:id/status', this.checkTournamentStatus.bind(this));
 		this.fastify.post('/:id/register', this.registerParticipant.bind(this));
 	}
 
@@ -97,15 +97,15 @@ export class TournamentController {
 		}
 	}
 
-	private async checkTournamentStatus(req: FastifyRequest, reply: FastifyReply) {
-		const id = Number((req.params as any).id);
-		try {
-			const status = await this.tournamentService.checkTournamentStatus(id);
-			reply.send(status);
-		}
-		catch (err) {
-			const msg = err instanceof Error ? err.message : 'Error';
-			reply.status(400).send({ message: msg});
-		}
-	}
+	// private async checkTournamentStatus(req: FastifyRequest, reply: FastifyReply) {
+	// 	const id = Number((req.params as any).id);
+	// 	try {
+	// 		const status = await this.tournamentService.checkTournamentStatus(id);
+	// 		reply.send(status);
+	// 	}
+	// 	catch (err) {
+	// 		const msg = err instanceof Error ? err.message : 'Error';
+	// 		reply.status(400).send({ message: msg});
+	// 	}
+	// }
 }

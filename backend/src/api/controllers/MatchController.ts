@@ -22,9 +22,9 @@ export class MatchController {
 
 	private async completeMatch(req: FastifyRequest, reply: FastifyReply) {
 		const matchId = Number((req.params as any).id);
-		const { result} =  req.body as { result: string};
+		const { result: winnerId} =  req.body as { result: number};
 		try {
-			const match = await this.matchRepo.completeMatch(matchId, result);
+			const match = await this.matchRepo.completeMatch(matchId, winnerId);
 			reply.send(match);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error';
