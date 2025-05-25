@@ -30,8 +30,8 @@ export class GameHandler {
 		this.winnerId = winnerId;
 	}
 	
-	public handleClientMessage(playerId: number, message: string): void {
-		const data = JSON.parse(message);
+	public handleClientMessage(playerId: number, data: any): void {
+		// const data = JSON.parse(message);
 		
 		switch (data.type) {
 			case 'ready':
@@ -52,6 +52,8 @@ export class GameHandler {
 				break;
 			case 'reset':
 				this.resetGame();
+				break;
+			default:
 				break;
 		}
 	}

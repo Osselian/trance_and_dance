@@ -51,20 +51,67 @@ export class Game {
 
   public start(): void {
     // Set up WebSocket message handler
+    console.log('Connected to game server');
+    // Set the correct paddle as player's paddle based on playerNumber
+    if (this.settings.playerNumber === 1) {
+      this.leftPaddle = new Paddle(50, true);
+      this.rightPaddle = new Paddle(this.canvas.width - 60, false);
+    } else {
+      this.leftPaddle = new Paddle(50, false);
+      this.rightPaddle = new Paddle(this.canvas.width - 60, true);
+    }
+
+    this.subscribeOnWsEvents();
+
+
+    // Set up keyboard input handler
+    document.addEventListener('keydown', (event) => {
+      if (this.gameState !== GameState.PLAYING) return;
+
+      let direction: 'up' | 'down' | null = null;
+
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          direction = 'up';
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          direction = 'down';
+          break;
+      }
+
+      if (direction) {
+        this.ws.send(JSON.stringify({
+          type: 'move',
+          direction: direction
+        }));
+      }
+    });
+
+      this.ws.send(JSON.stringify({ type: 'ready' }));
+    // Start the game loop
+    // const gameLoop = (timestamp: number) => {
+    //   const deltaTime = timestamp - this.lastFrameTime;
+    //   this.lastFrameTime = timestamp;
+
+    //   this.update(deltaTime);
+    //   this.draw();
+
+    //   this.animationFrameId = requestAnimationFrame(gameLoop);
+    // };
+
+    // this.animationFrameId = requestAnimationFrame(gameLoop);
+  }
+
+  private subscribeOnWsEvents(){
     this.ws.addEventListener('message', (event) => {
       const message = JSON.parse(event.data);
       
       switch (message.type) {
         case 'connection':
-          console.log('Connected to game server');
-          // Set the correct paddle as player's paddle based on playerNumber
-          if (this.settings.playerNumber === 1) {
-            this.leftPaddle = new Paddle(50, true);
-            this.rightPaddle = new Paddle(this.canvas.width - 60, false);
-          } else {
-            this.leftPaddle = new Paddle(50, false);
-            this.rightPaddle = new Paddle(this.canvas.width - 60, true);
-          }
           break;
           
         case 'playerConnected':
@@ -73,7 +120,7 @@ export class Game {
           
         case 'ping':
           // send back pong
-          this.ws.send(JSON.stringify({ type: 'pong' }));
+          // this.ws.send(JSON.stringify({ type: 'pong' }));//может тоже убрать
           break;
           
         case 'error':
@@ -117,48 +164,7 @@ export class Game {
       // Redraw the game state after processing the message
       this.draw();
     });
-
-    // Set up keyboard input handler
-    document.addEventListener('keydown', (event) => {
-      if (this.gameState !== GameState.PLAYING) return;
-
-      let direction: 'up' | 'down' | null = null;
-
-      switch (event.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          direction = 'up';
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          direction = 'down';
-          break;
-      }
-
-      if (direction) {
-        this.ws.send(JSON.stringify({
-          type: 'move',
-          direction: direction
-        }));
-      }
-    });
-
-    // Start the game loop
-    // const gameLoop = (timestamp: number) => {
-    //   const deltaTime = timestamp - this.lastFrameTime;
-    //   this.lastFrameTime = timestamp;
-
-    //   this.update(deltaTime);
-    //   this.draw();
-
-    //   this.animationFrameId = requestAnimationFrame(gameLoop);
-    // };
-
-    // this.animationFrameId = requestAnimationFrame(gameLoop);
-  }
-
+}
   private draw(): void {
     // Clear canvas
     this.ctx.fillStyle = '#1A1A1A';

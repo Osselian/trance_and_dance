@@ -20,60 +20,67 @@
    </div>
  </section>
  `;
+const API = 'https://10.19.248.65:3000';
 
 export function initHome() {
-  const isAuth = Boolean(localStorage.getItem('token'))
-  const btns = document.getElementById('game-buttons')!
-  btns.classList.toggle('hidden', !isAuth)
-  const btnVsCPU     = document.getElementById('vs-computer');
-  const btn1v1       = document.getElementById('one-vs-one');
-  const btnSearch = document.getElementById('search-quick') as HTMLButtonElement | null;;
-  const btnT         = document.getElementById('tournament');
+  // Показываем кнопки, только если есть токен
+  const isAuth = Boolean(localStorage.getItem('token'));
+  const btns   = document.getElementById('game-buttons')!;
+  btns.classList.toggle('hidden', !isAuth);
 
+  // Находим кнопки
+  const btnVsCPU  = document.querySelector<HTMLButtonElement>('#vs-computer');
+  const btn1v1    = document.querySelector<HTMLButtonElement>('#one-vs-one');
+  const btnSearch = document.querySelector<HTMLButtonElement>('#search-quick');
+  const btnT      = document.querySelector<HTMLButtonElement>('#tournament');
+
+  // Простые переходы
   btnVsCPU?.addEventListener('click', () => location.hash = '#/play/cpu');
-  btn1v1?.addEventListener('click', () => location.hash = '#/play/1v1');
-  btnT?.addEventListener('click',   () => location.hash = '#/tournament');
+  btn1v1?.addEventListener('click',   () => location.hash = '#/play/1v1');
+  btnT?.addEventListener('click',     () => location.hash = '#/play/tournament');
 
-   btnSearch?.addEventListener('click', async () => {
-     btnSearch.disabled    = true;
-     btnSearch.textContent = 'Searching for a an opponent...';
+  // Поиск Quick-Game
+  btnSearch?.addEventListener('click', async () => {
+    // Отключаем кнопку и показываем статус
+    btnSearch.disabled    = true;
+    btnSearch.textContent = 'Searching…';
 
-     try {
-       // 1) старт поиска
-       let res = await fetch('/matchmaking/join', { method: 'POST' });
-       if (!res.ok) throw new Error(`Error ${res.status}`);
+    // Заголовки, если нужен JWT
+    const token = localStorage.getItem('token');
+    const headers: Record<string,string> = token
+      ? { 'Authorization': `Bearer ${token}` }
+      : {};
 
-       // 2) ждем matchId
-       let matchId: string | null = null;
-       while (!matchId) {
-         await new Promise(r => setTimeout(r, 1000));
-         res = await fetch('/matchmaking/checkPending');
-         if (!res.ok) throw new Error(`Status not received: ${res.status}`);
-         const json = await res.json() as {
-           status: 'pending' | 'found' | 'not_found';
-           position?: number;
-           matchId?: string;
-         };
+    try {
+      // 1) Кладёмся в очередь
+      let res = await fetch(`${API}/matchmaking/join`,    { method: 'POST', headers });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
 
-         if (json.status === 'not_found') {
-           alert('Unable to find another player. Please try again later.');
-           throw new Error('Match not found');
-         }
+      // 2) Пуллим, пока не найдём matchId
+      let matchId: string | null = null;
+      while (!matchId) {
+        // Ждём 1 секунду между запросами
+        await new Promise(r => setTimeout(r, 1000));
 
-         if (json.status === 'found' && json.matchId) {
-            // переходим на маршрут, который запустит WS и сам вызовет F
-           location.hash = `#/play/quick/${json.matchId}`;
-           return;
-         }
+        res = await fetch(`${API}/matchmaking/checkPending`, { headers });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
 
-         // pending
-         btnSearch.textContent = `Search… (in queue: ${json.position})`;
-       }
-     } catch (err) {
-       console.error(err);
-       // восстанавливаем кнопку
-       btnSearch.disabled    = false;
-       btnSearch.textContent = 'Find a quick game';
-     }
-   });
+        // Ожидаем { found: boolean; matchId?: string }
+        const json = await res.json() as { found: boolean; matchId?: string };
+
+        if (json.found && json.matchId) {
+          // Как только нашли — уходим
+          location.hash = `#/play/quick/${encodeURIComponent(json.matchId)}`;
+          return;
+        }
+        // иначе остаёмся в ожидании, обновляем текст
+        btnSearch.textContent = 'Searching…';
+      }
+    } catch (err) {
+      console.error(err);
+      // Восстанавливаем кнопку в исходное состояние
+      btnSearch.disabled    = false;
+      btnSearch.textContent = 'Search quick';
+    }
+  });
 }
