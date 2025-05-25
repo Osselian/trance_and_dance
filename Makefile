@@ -32,7 +32,10 @@ certs:
 	@chmod 644 $(PROMETHEUS_CERT_DIR)/*.key || true
 up:
 	docker-compose -f docker-compose.yml -f docker-compose.elk.yml up --build
+# docker-compose -f docker-compose.combined.yml up --build
 down:
 	docker-compose -f docker-compose.yml -f docker-compose.elk.yml down
+# docker-compose -f docker-compose.combined.yml down
 down-volumes:
 	docker-compose -f docker-compose.yml -f docker-compose.elk.yml down -v
+# docker-compose -f docker-compose.combined.yml down - v
