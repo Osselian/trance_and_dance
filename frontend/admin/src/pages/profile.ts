@@ -32,7 +32,7 @@ export const profileView = `
           <tr>
             <td class="table-cell-label">Email</td>
             <td class="table-cell-input">
-              <input name="email" class="input" readonly />
+              <input name="email" type="email" class="input" readonly>
             </td>
           </tr>
           <tr>
@@ -147,6 +147,10 @@ export async function profileInit(userId?: number) {
     })
 
     saveBtn.addEventListener('click', async () => {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value)) {
+        statusEl.textContent = 'Incorrect email address';
+        return;
+      }
       try {
         let newAvatarUrl = original.avatarUrl
         if (newAvatarFile) {
@@ -168,9 +172,9 @@ export async function profileInit(userId?: number) {
         const updated = await AuthAPI.updateProfile(payload)
         original = updated
         setEditing(false)
-        statusEl.textContent = 'Сохранено!'
+        statusEl.textContent = 'Saved!'
       } catch (err: any) {
-        statusEl.textContent = 'Ошибка: ' + err.message
+        statusEl.textContent = 'Error: ' + err.message
       }
     })
   }
