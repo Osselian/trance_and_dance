@@ -25,6 +25,11 @@ const fastify = Fastify(
 	}
 ).withTypeProvider<TypeBoxTypeProvider>();
 
+fastify.addHook('onSend', async (request, reply, payload) => {
+  // позволим попапам Google закрывать себя
+  reply.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  return payload;
+});
 
 fastify.register(fastifyCors, {
 	origin: ['https://localhost:8080', 'https://localhost:8081'],
