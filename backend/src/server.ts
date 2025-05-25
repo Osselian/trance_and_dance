@@ -32,7 +32,7 @@ fastify.addHook('onSend', async (request, reply, payload) => {
 });
 
 fastify.register(fastifyCors, {
-	origin: ['https://localhost:8080', 'https://localhost:8081'],
+	origin: true,
 	credentials: true,
 	methods: ['GET', 'POST', 'DELETE', 'OPTIONS', 'PUT']
 });
