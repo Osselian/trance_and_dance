@@ -1,11 +1,14 @@
 import { Game } from "../pong/Game";
 import { WebSocket } from '@fastify/websocket';
+import { GamesStateDto } from "../pong/GamesStateDto";
 
-export class GameService {
+export class GameHandler {
 	private clients: Map<number, WebSocket> = new Map();
 	private gameInterval: NodeJS.Timeout | null = null;
 	private game: Game;
 	private playersReady: Set<number> = new Set();
+	private isGameCompleted: boolean = false;
+	private winnerId: number | null = null;
 
 	constructor() {
 		this.game = new Game();
@@ -15,6 +18,18 @@ export class GameService {
 		this.clients.set(playerId, socket);
 	}
 
+	public getIsGameCompleted(): boolean {
+		return this.isGameCompleted;
+	}
+
+	public getWinnerId(): number | null {
+		return this.winnerId;
+	}
+
+	public setWinnerId(winnerId: number | null): void {
+		this.winnerId = winnerId;
+	}
+	
 	public handleClientMessage(playerId: number, message: string): void {
 		const data = JSON.parse(message);
 		
@@ -79,9 +94,14 @@ export class GameService {
 		this.game.start();
 
 		this.gameInterval = setInterval(() => {
-			this.game.updateState(0.05); // 50 ms
-			this.broadcastGameState();
-		}, 50);
+			this.game.updateState(0.017); // 17 ms
+			const state = this.game.getState();
+			if (state.gameState === 'GAME_OVER') {
+				this.stopGame();
+				this.winnerId = state.winnerId;
+			}
+			this.broadcastGameState(state);
+		}, 17);
 	}
 
 	public pauseGame(): void {
@@ -96,18 +116,16 @@ export class GameService {
 		this.startGame();
 	}
 
-
 	public resetGame(): void {
 		this.game.reset();
 	}
 //под вопросом
 	public stopGame(): void {
+		this.isGameCompleted = true;
 		if (this.gameInterval) {
 			clearInterval(this.gameInterval);
 			this.gameInterval = null;
 		}
-
-		this.game.stopGame();
 
 		const gameStopMessage = {
 			type: 'gameStop',
@@ -121,9 +139,8 @@ export class GameService {
 	}
 
 
-	private broadcastGameState(): void {
+	private broadcastGameState(state:GamesStateDto): void {
 		try {
-			const state = this.game.getState();
 			const stateString = JSON.stringify(state);
 			this.clients.forEach((client) => {
 				try {

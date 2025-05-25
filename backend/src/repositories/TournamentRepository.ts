@@ -60,6 +60,16 @@ export class TournamentRepository {
 		});
 	}
 
+	findNotCompleted(): Promise<Tournament[]> {
+		return prisma.tournament.findMany({
+			where: {
+				status: { not: TournamentStatus.COMPLETED },
+				startDate: {lte: new Date() }
+			},
+			include: { participants: true }
+		});
+	}
+
 	async delete(id: number): Promise<Tournament> {
 		return prisma.tournament.delete({ where: { id}});
 	}
