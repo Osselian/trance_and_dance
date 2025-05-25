@@ -3,7 +3,8 @@ import { notFoundView }              from './pages/notFound'
 import { registerView, registerInit }from './pages/register'
 import { profileView, profileInit }  from './pages/profile'
 import { loginView, loginInit }      from './pages/login'
-import { startVsComputer, start1v1, startQuickGame } from '../../pong/src/game/gameLogic.js'
+import { startVsComputer, start1v1}  from '../../pong/src/game/gameLogic.js'
+import { startQuickGame }            from '../../pong/src/game_online/gameLogic.js'
 import { friendsView, initFriends }  from './pages/friends'
 import { ChatPage }                  from './pages/chat'
 import { tournamentView, initTournament } from './pages/tournament';
@@ -54,7 +55,40 @@ async function mountRoute() {
     const matchId = location.hash.split('/')[3]
     route = {
       view: '',
-      init: () => { /* …quick game init… */ }
+      init: () => {
+        // 2) рендерим экран игры (из startQuickGame будет вызван renderGameScreen)
+        // сразу открываем WS-соединение на ваш бекенд
+        const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
+        const ws = new WebSocket(
+          `${wsProtocol}://${location.host}/matchmaking/ws`
+        )
+
+        // 3) после установки соединения сообщаем серверу, в какую комнату
+        ws.addEventListener('open', () => {
+          ws.send(JSON.stringify({
+            action: 'joinRoom',
+            matchId
+          }))
+        })
+
+        // 4) ждём сообщения от сервера и при type==='connection' и status === 'connected' запускаем игру
+        ws.addEventListener('message', ({ data }) => {
+          const msg = JSON.parse(data)
+          if (msg.type === 'connection' && msg.data.status === 'connected') {
+            // Теперь внутри renderGameScreen + Game-класса
+            // появится канвас, передадим socket и настройки в логику
+            startQuickGame(ws, msg)
+          }
+        })
+
+        // на ошибку/закрытие WS можно повесить логику clean-up
+        ws.addEventListener('error', () => {
+          alert('WebSocket error for quick game')
+        })
+        ws.addEventListener('close', () => {
+          console.warn('Quick game socket closed prematurely')
+        })
+      }
     }
   }
   else {

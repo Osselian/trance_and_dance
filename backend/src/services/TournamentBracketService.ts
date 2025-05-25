@@ -8,8 +8,30 @@ export class TournamentBracketService {
 		private matchRepo = new MatchRepository(),
 	) {}
 
-	async createFirstRoundMatches(tournamentId: number, participantIds: number[]): 
+	async generateBracket(tournamentId: number, participantIds: number[]): 
 		Promise<TournamentMatch[]> 
+	{
+		const playersCount = participantIds.length;
+		const roundOneMatches = 
+			await this.createFirstRoundMatches(tournamentId, participantIds);
+		
+		const totalRounds = Math.log2(playersCount);
+		let allMatches = [...roundOneMatches];
+
+		for (let round = 2; round <= totalRounds; round++) {
+			const matchesInRound = playersCount / Math.pow(2, round);
+			const roundMatches = await this
+				.createEmptyRoundMatches(tournamentId, round, matchesInRound);
+			allMatches = [...allMatches, ...roundMatches];
+		}
+
+		await this.connectMatchesInBracket(tournamentId, playersCount);
+
+		return allMatches;
+	}
+
+	private async createFirstRoundMatches(
+		tournamentId: number, participantIds: number[]): Promise<TournamentMatch[]> 
 	{
 		const matches = await Promise.all(
 			participantIds.reduce(
@@ -39,7 +61,7 @@ export class TournamentBracketService {
 		return tmEntries;
 	}
 
-	async createEmptyRoundMatches(
+	private async createEmptyRoundMatches(
 		tournamentId: number, round: number, matchCount: number): Promise<TournamentMatch[]> 
 	{
 		const matchesData = [];
@@ -56,7 +78,7 @@ export class TournamentBracketService {
 		return this.tmRepo.createBatch(matchesData)
 	}
 
-	async connectMatchesInBracket(tournamentId: number, requiredPlayers: number): 
+	private async connectMatchesInBracket(tournamentId: number, requiredPlayers: number): 
 		Promise<void>
 	{
 		const allMatches = await this.tmRepo.findAllByTournament(tournamentId);

@@ -25,12 +25,12 @@ export class TournamentMatchRepository {
 		});
 	}
 
-	async updateWinner(id: number, winnerId: number): Promise<TournamentMatch> {
-		return prisma.tournamentMatch.update({
-			where: { id },
-			data: { winnerId }
-		});
-	}
+	// async updateWinner(id: number, winnerId: number): Promise<TournamentMatch> {
+	// 	return prisma.tournamentMatch.update({
+	// 		where: { id },
+	// 		data: { winnerId }
+	// 	});
+	// }
 
 	async updateNextMatch(id: number, nextMatchId: number): Promise<TournamentMatch> {
 		return prisma.tournamentMatch.update({
@@ -84,19 +84,31 @@ export class TournamentMatchRepository {
 		});
 	}
 
-	async findCompletedMatchesWithoutNextMatch(tournamentId: number):
+	async findNotCompletedMatchesByRound(tournamentId: number, round: number): 
 		Promise<TournamentMatch[]> 
 	{
 		return prisma.tournamentMatch.findMany({ 
 			where: { 
 				tournamentId, 
-				nextMatchId: null,
-				match: {status: MatchStatus.COMPLETED},
-				winnerId: { not: null }
-			},
+				round,
+				match: { status: { not: MatchStatus.COMPLETED } } },
 			include: { match: true}
 		});
 	}
+
+	// async findCompletedMatchesWithoutNextMatch(tournamentId: number):
+	// 	Promise<TournamentMatch[]> 
+	// {
+	// 	return prisma.tournamentMatch.findMany({ 
+	// 		where: { 
+	// 			tournamentId, 
+	// 			nextMatchId: null,
+	// 			match: {status: MatchStatus.COMPLETED},
+	// 			winnerId: { not: null }
+	// 		},
+	// 		include: { match: true}
+	// 	});
+	// }
 
 	async updateStatus(id: number, status: MatchStatus): Promise<TournamentMatch> {
 		return prisma.$transaction(async ts => {
