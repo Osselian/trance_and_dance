@@ -56,12 +56,12 @@ export function initHome() {
          };
 
          if (json.status === 'not_found') {
-           alert('Unable to find enemy.');
+           alert('Unable to find another player. Please try again later.');
            throw new Error('Match not found');
          }
 
          if (json.status === 'found' && json.matchId) {
-            // переходим на маршрут, который запустит WS и сам вызовет startQuickGame
+            // переходим на маршрут, который запустит WS и сам вызовет F
            location.hash = `#/play/quick/${json.matchId}`;
            return;
          }

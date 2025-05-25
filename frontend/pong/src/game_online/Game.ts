@@ -2,8 +2,12 @@ import { GameState, GameMode } from '../utils/types';
 import { Paddle } from './Paddle';
 import { Ball } from './Ball';
 import { Score } from './Score';
+import { GamesStateDto } from '../utils/types';
+
 
 export class Game {
+  private ws: WebSocket;
+  private settings: any;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private playerPaddle: Paddle;
@@ -14,9 +18,6 @@ export class Game {
   private gameMode: GameMode | null = null;
   private gameMessage: HTMLElement;
   private animationFrameId: number | null = null;
-  private lastComputerMoveTime: number = 0;
-  private lastComputerMoveDirection: 'up' | 'down' | null = null;
-  private lastComputerMoveDistance: number = 0;
   private lastScoreTime: number = 0;
   private readonly SCORE_DELAY = 1000; // 1 second delay
   private isWaitingForBallSpawn: boolean = false;
@@ -24,7 +25,9 @@ export class Game {
   private lastFrameTime: number = 0;
   private targetPaddlePositions: { player: number; computer: number } | null = null;
 
-  constructor(mode?: GameMode) {
+  constructor(mode: GameMode, ws: WebSocket, settings: any) {
+    this.ws = ws;
+    this.settings = settings;
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.gameMessage = document.getElementById('gameMessage') as HTMLElement;
@@ -48,132 +51,9 @@ export class Game {
     this.setupEventListeners();
   }
 
-private setupEventListeners(): void {
-  document.addEventListener('keydown', (e) => {
-    // только когда игра идёт
-    if (this.gameState !== GameState.PLAYING) {
-      // запуск/пауза/рестарт
-      if (e.code === 'Space') {
-        if (this.gameState === GameState.START
-          || this.gameState === GameState.PAUSED
-          || this.gameState === GameState.GAME_OVER) {
-          this.startGame();
-        } else {
-          this.pauseGame();
-        }
-      }
-      if (e.code === 'Escape') {
-        this.resetGame();
-      }
-      return;
-    }
-
-    // управление первой ракеткой
-    if (['ArrowUp', 'KeyW'].includes(e.code)) {
-      this.playerPaddle.move('up', this.canvas.height);
-    } else if (['ArrowDown', 'KeyS'].includes(e.code)) {
-      this.playerPaddle.move('down', this.canvas.height);
-    }
-
-    // управление второй (в режиме VS_PLAYER)
-    if (this.gameMode === GameMode.VS_PLAYER) {
-      if (e.code === 'KeyO') {
-        this.computerPaddle.move('up', this.canvas.height);
-      } else if (e.code === 'KeyL') {
-        this.computerPaddle.move('down', this.canvas.height);
-      }
-    }
-  });
-
-  document.addEventListener('keyup', (e) => {
-    if (this.gameState !== GameState.PLAYING) return;
-
-    // остановка первой ракетки
-    if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) {
-      this.playerPaddle.stop();
-    }
-    // остановка второй (только в VS_PLAYER)
-    if (this.gameMode === GameMode.VS_PLAYER
-      && ['KeyO', 'KeyL'].includes(e.code)) {
-      this.computerPaddle.stop();
-    }
-  });
-}
-
-  // private setupEventListeners(): void {
-  //   document.addEventListener('keydown', (e) => {
-  //     switch (e.key) {
-  //       case 'ArrowUp':
-  //       case 'w':
-  //       case 'W':
-  //         if (this.gameState === GameState.PLAYING) {
-  //           this.playerPaddle.move('up', this.canvas.height);
-  //         }
-  //         break;
-  //       case 'ArrowDown':
-  //       case 's':
-  //       case 'S':
-  //         if (this.gameState === GameState.PLAYING) {
-  //           this.playerPaddle.move('down', this.canvas.height);
-  //         }
-  //         break;
-  //       case 'o':
-  //       case 'O':
-  //         if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
-  //           this.computerPaddle.move('up', this.canvas.height);
-  //         }
-  //         break;
-  //       case 'l':
-  //       case 'L':
-  //         if (this.gameState === GameState.PLAYING && this.gameMode === GameMode.VS_PLAYER) {
-  //           this.computerPaddle.move('down', this.canvas.height);
-  //         }
-  //         break;
-  //       case ' ':
-  //         if (this.gameState === GameState.START ||
-  //             this.gameState === GameState.PAUSED ||
-  //             this.gameState === GameState.GAME_OVER) {
-  //           this.startGame();
-  //         } else if (this.gameState === GameState.PLAYING) {
-  //           this.pauseGame();
-  //         }
-  //         break;
-  //       case 'Escape':
-  //         this.resetGame();
-  //         break;
-  //     }
-  //   });
-
-  //   document.addEventListener('keyup', (e) => {
-  //     if (this.gameState !== GameState.PLAYING) return;
-
-  //     if (e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
-  //         e.key === 'w' || e.key === 'W' ||
-  //         e.key === 's' || e.key === 'S') {
-  //       this.playerPaddle.stop();
-  //     }
-
-  //     if (this.gameMode === GameMode.VS_PLAYER &&
-  //         (e.key === 'o' || e.key === 'O' ||
-  //          e.key === 'l' || e.key === 'L')) {
-  //       this.computerPaddle.stop();
-  //     }
-  //   });
-  // }
-
   public start(): void {
     this.hideMessage(); // Hide the message element since we're drawing on canvas
     this.gameLoop();
-  }
-
-  private gameLoop(): void {
-    const currentTime = performance.now();
-    const deltaTime = (currentTime - this.lastFrameTime) / 1000; // Convert to seconds
-    this.lastFrameTime = currentTime;
-
-    this.update(deltaTime);
-    this.draw();
-    this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
   }
 
   private update(deltaTime: number): void {
@@ -273,255 +153,4 @@ private setupEventListeners(): void {
     }
   }
 
-  private updateComputerPaddle(deltaTime: number): void {
-    if (this.targetPaddlePositions) {
-      return;
-    }
-
-    const ballPos = this.ball.getPosition();
-    const paddlePos = this.computerPaddle.getPosition();
-    const paddleSize = this.computerPaddle.getSize();
-    const paddleCenter = paddlePos.y + paddleSize.height / 2;
-
-    // Целевая позиция — либо за мячом, либо к центру
-    let targetY: number;
-    if (this.ball.getVelocity().x > 0) {
-      // Мяч летит к компьютеру — следуем за ним
-      targetY = ballPos.y;
-    } else {
-      // Мяч летит от компьютера — возвращаемся к центру
-      targetY = this.canvas.height / 2;
-    }
-
-    // Ограничиваем скорость движения ИИ
-    const maxSpeed = 300; // пикселей в секунду, уменьшите для большей плавности
-    const distance = targetY - paddleCenter;
-    const move = Math.sign(distance) * Math.min(Math.abs(distance), maxSpeed * deltaTime);
-
-    this.computerPaddle.setCenterY(paddleCenter + move, this.canvas.height);
-
-    this.computerPaddle.update(this.canvas.height, deltaTime);
-  }
-
-  private checkCollisions(): void {
-    const ballPos = this.ball.getPosition();
-    const ballSize = this.ball.getSize();
-    const ballVel = this.ball.getVelocity();
-
-    // Check paddle collisions
-    [this.playerPaddle, this.computerPaddle].forEach(paddle => {
-      const paddlePos = paddle.getPosition();
-      const paddleSize = paddle.getSize();
-
-      // Check if ball is colliding with paddle
-      if (
-        ballPos.x + ballSize / 2 >= paddlePos.x &&
-        ballPos.x - ballSize / 2 <= paddlePos.x + paddleSize.width &&
-        ballPos.y + ballSize / 2 >= paddlePos.y &&
-        ballPos.y - ballSize / 2 <= paddlePos.y + paddleSize.height
-      ) {
-        // Determine which part of the paddle was hit
-        const isPlayerPaddle = paddle.isPlayerPaddle();
-        const paddleCenterX = isPlayerPaddle ? paddlePos.x + paddleSize.width : paddlePos.x;
-        const paddleCenterY = paddlePos.y + paddleSize.height / 2;
-
-        // Calculate relative position of ball to paddle center
-        const relativeY = (ballPos.y - paddleCenterY) / (paddleSize.height / 2);
-
-        // Check if ball hit the side of the paddle
-        const hitSide = isPlayerPaddle ?
-          (ballPos.x + ballSize / 2 <= paddlePos.x + paddleSize.width / 4) :
-          (ballPos.x - ballSize / 2 >= paddlePos.x + paddleSize.width * 3/4);
-
-        if (hitSide) {
-          // Side hit - ball bounces off the side wall
-          this.ball.reverseX();
-          // Add some vertical velocity based on where it hit the paddle
-          this.ball.setVelocityY(relativeY * this.ball.getCurrentSpeed());
-        } else {
-          // Front hit - normal paddle hit
-          this.ball.reverseX();
-          // Add some vertical velocity based on where it hit the paddle
-          this.ball.setVelocityY(relativeY * this.ball.getCurrentSpeed());
-        }
-      }
-    });
-  }
-
-  public endGame(winnerId: number | null): void {
-    this.gameState = GameState.GAME_OVER;
-
-    // Определяем победителя
-    const winner = winnerId === 0 ? 'Player 1' : 'Player 2';
-    console.log(`${winner} won the game!`);
-
-    // Отображаем сообщение о победителе
-    this.ctx.font = '30px Arial';
-    this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${winner} won! Press SPACE to restart.`, this.canvas.width / 2, this.canvas.height / 2);
-
-    // Останавливаем игровой цикл
-    if (this.animationFrameId) {
-        cancelAnimationFrame(this.animationFrameId);
-        this.animationFrameId = null;
-    }
-}
-
-  private checkScoring(): void {
-    const ballPos = this.ball.getPosition();
-    const ballSize = this.ball.getSize();
-    const currentTime = performance.now();
-
-    // Only check for scoring if we're not waiting for ball spawn
-    if (!this.isWaitingForBallSpawn) {
-      if (ballPos.x - ballSize / 2 <= 0) {
-        this.score.incrementComputer();
-        this.lastScoreTime = currentTime;
-        this.ball.hide();
-        this.isWaitingForBallSpawn = true;
-        this.startPaddleReset();
-      } else if (ballPos.x + ballSize / 2 >= this.canvas.width) {
-        this.score.incrementPlayer();
-        this.lastScoreTime = currentTime;
-        this.ball.hide();
-        this.isWaitingForBallSpawn = true;
-        this.startPaddleReset();
-      }
-    }
-
-    // Reset ball after delay
-    if (this.isWaitingForBallSpawn && currentTime - this.lastScoreTime >= this.SCORE_DELAY) {
-      this.resetBall();
-      this.lastScoreTime = 0;
-      this.isWaitingForBallSpawn = false;
-      this.targetPaddlePositions = null;
-    }
-
-    // if (this.score.hasWinner()) {
-    //   this.endGame();
-    // }
-  }
-
-  private updatePaddlePositions(deltaTime: number): void {
-    if (this.targetPaddlePositions) {
-      const currentTime = performance.now();
-      const timeElapsed = currentTime - this.lastScoreTime;
-
-      // Reset paddles instantly at the midpoint of countdown
-      if (timeElapsed >= this.SCORE_DELAY / 2) {
-        this.resetPaddles();
-        this.targetPaddlePositions = null;
-      }
-    }
-  }
-
-  private startPaddleReset(): void {
-    // Just set the flag to trigger reset at midpoint
-    this.targetPaddlePositions = { player: 0, computer: 0 };
-  }
-
-  private resetPaddles(): void {
-    // Reset player paddle to center
-    this.playerPaddle.reset(this.canvas.height);
-    // Reset computer paddle to center
-    this.computerPaddle.reset(this.canvas.height);
-  }
-
-  private resetBall(): void {
-    this.ball.reset();
-    this.ball.show();
-  }
-
-  private startGame(): void {
-    if (this.gameState === GameState.GAME_OVER) {
-        // Store the current game mode before reset
-        const currentMode = this.gameMode;
-        this.resetGame();
-        // Restore the game mode
-        this.gameMode = currentMode;
-    }
-    this.isGameStartCountdown = true;
-    this.lastScoreTime = performance.now();
-    this.gameState = GameState.PLAYING;
-    this.ball.hide(); // Hide ball during countdown
-    this.startPaddleReset(); // Start smooth paddle reset
-    this.hideMessage();
-  }
-
-  private pauseGame(): void {
-    this.gameState = GameState.PAUSED;
-    this.hideMessage();
-  }
-
-  private resetGame(): void {
-    this.score.reset();
-    this.resetBall();
-    this.targetPaddlePositions = null;
-    this.gameState = GameState.MODE_SELECTION;
-    this.gameMode = null;
-    this.isGameStartCountdown = false;
-    // Reset both paddles to ensure their internal state is cleared
-    this.playerPaddle.reset(this.canvas.height);
-    this.computerPaddle.reset(this.canvas.height);
-    this.hideMessage();
-  }
-
-  private showMessage(message: string): void {
-    // We're not using the message element anymore, all messages are drawn on canvas
-    this.hideMessage();
-  }
-
-  private hideMessage(): void {
-    this.gameMessage.style.display = 'none';
-  }
-
-  // Геттер для получения позиции мяча
-  public getBallPosition(): { x: number; y: number } | null {
-    return this.ball.getPosition();
-  }
-
-  // Сеттер для установки позиции мяча
-  public setBallPosition(position: { x: number; y: number } | null): void {
-    this.ball.setPosition(position);
-  }
-
-  // Геттер для получения скорости мяча
-  public getBallVelocity(): { x: number; y: number } {
-    return this.ball.getVelocity();
-  }
-
-  // Сеттер для установки скорости мяча
-  public setBallVelocity(velocity: { x: number; y: number }): void {
-    this.ball.setVelocity(velocity);
-  }
-
-  // Методы для работы с playerPaddle
-  public getPlayerPaddlePosition(): { x: number; y: number } {
-    return this.playerPaddle.getPosition();
-  }
-
-  public setPlayerPaddlePosition(position: { x: number; y: number }): void {
-    this.playerPaddle.setPosition(position.y);
-  }
-
-  // Методы для работы с computerPaddle
-  public getComputerPaddlePosition(): { x: number; y: number } {
-    return this.computerPaddle.getPosition();
-  }
-
-  public setComputerPaddlePosition(position: { x: number; y: number }): void {
-    this.computerPaddle.setPosition(position.y);
-  }
-
-  // Методы для работы со score
-  public updateScore(playerScore: number, opponentScore: number): void {
-    this.score.setScore(playerScore, opponentScore);
-  }
-
-  // Другие методы для работы с мячом можно добавить по необходимости
-
-  public setGameState(state: GameState): void {
-    this.gameState = state;
-  }
 }

@@ -1,11 +1,10 @@
 import { Position, Size } from '../utils/types';
-import { PADDLE_HEIGHT, PADDLE_WIDTH, PADDLE_SPEED, PADDLE_ACCELERATION, COLORS } from '../utils/constants';
+import { PADDLE_HEIGHT, PADDLE_WIDTH, COLORS } from '../utils/constants';
 
 export class Paddle {
   private position: Position;
   private size: Size;
-  private speed: number;
-  private currentSpeed: number;
+  // private currentSpeed: number;
   private isPlayer: boolean;
   private isMoving: boolean;
   private moveDirection: 'up' | 'down' | null;
@@ -13,8 +12,7 @@ export class Paddle {
   constructor(x: number, isPlayer: boolean) {
     this.position = { x, y: 250 }; // Start in the middle vertically
     this.size = { width: PADDLE_WIDTH, height: PADDLE_HEIGHT };
-    this.speed = PADDLE_SPEED;
-    this.currentSpeed = 0;
+    // this.currentSpeed = 0;
     this.isPlayer = isPlayer;
     this.isMoving = false;
     this.moveDirection = null;
@@ -75,7 +73,7 @@ export class Paddle {
 
   public reset(canvasHeight: number): void {
     this.position.y = (canvasHeight - this.size.height) / 2;
-    this.currentSpeed = 0;
+    // this.currentSpeed = 0;
     this.isMoving = false;
     this.moveDirection = null;
   }

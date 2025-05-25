@@ -3,7 +3,8 @@ import { notFoundView }              from './pages/notFound'
 import { registerView, registerInit }from './pages/register'
 import { profileView, profileInit }  from './pages/profile'
 import { loginView, loginInit }      from './pages/login'
-import { startVsComputer, start1v1, startQuickGame } from '../../pong/src/game/gameLogic.js'
+import { startVsComputer, start1v1}  from '../../pong/src/game/gameLogic.js'
+import { startQuickGame }            from '../../pong/src/game_online/gameLogic.js'
 import { friendsView, initFriends }  from './pages/friends'
 import { ChatPage }                  from './pages/chat'
 
@@ -70,13 +71,13 @@ if (location.hash.startsWith('#/play/quick/')) {
           }))
         })
 
-        // 4) ждём сообщения от сервера и при type==='start' запускаем игру
+        // 4) ждём сообщения от сервера и при type==='connection' и status === 'connected' запускаем игру
         ws.addEventListener('message', ({ data }) => {
           const msg = JSON.parse(data)
-          if (msg.type === 'start') {
+          if (msg.type === 'connection' && msg.data.status === 'connected') {
             // Теперь внутри renderGameScreen + Game-класса
             // появится канвас, передадим socket и настройки в логику
-            startQuickGame(ws, msg.settings)
+            startQuickGame(ws, msg)
           }
         })
 

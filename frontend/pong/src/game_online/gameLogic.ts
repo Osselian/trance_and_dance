@@ -19,17 +19,6 @@ function renderGameScreen() {
    `;
 }
 
-export function startVsComputer() {
-  renderGameScreen();
-  const game = new Game(GameMode.VS_COMPUTER);
-  game.start();
-}
-
-export function start1v1() {
-  renderGameScreen();
-  const game = new Game(GameMode.VS_PLAYER);
-  game.start();
-}
 
 /**
  * Запускает игру по найденному матчу.
@@ -37,20 +26,8 @@ export function start1v1() {
  * @param settings — настройки, пришедшие от сервера
  */
 
-export function startQuickGame() {
-  renderGameScreen();
-  const game = new Game(GameMode.VS_PLAYER);
+ export function startQuickGame(ws: WebSocket, settings: any) {
+   renderGameScreen();
+  const game = new Game(GameMode.QUICK, ws,settings);
   game.start();
 }
-
-//  export function startQuickGame(ws, settings = {}) {
-//    renderGameScreen();
-//   const game = new Game(GameMode.VS_PLAYER, ws, settings);
-//   game.start();
-// }
-
-// export function startTournament() {
-//   renderGameScreen();
-//   const game = new Game(GameMode.TOURNAMENT);
-//   game.start();
-// }
