@@ -10,8 +10,8 @@ export class Game {
   private settings: any;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private playerPaddle: Paddle;
-  private computerPaddle: Paddle;
+  private leftPaddle: Paddle;
+  private rightPaddle: Paddle;
   private ball: Ball;
   private score: Score;
   private gameState: GameState;
@@ -27,7 +27,7 @@ export class Game {
 
   constructor(mode: GameMode, ws: WebSocket, settings: any) {
     this.ws = ws;
-    this.settings = settings;
+    this.settings = settings; // settings come from server in a 'connection' message
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.gameMessage = document.getElementById('gameMessage') as HTMLElement;
@@ -38,8 +38,8 @@ export class Game {
     this.canvas.height = 600;
 
     // Initialize game objects
-    this.playerPaddle = new Paddle(50, true);
-    this.computerPaddle = new Paddle(this.canvas.width - 60, false);
+    this.leftPaddle = new Paddle(50, false);
+    this.rightPaddle = new Paddle(this.canvas.width - 60, false);
     this.ball = new Ball();
     this.score = new Score();
     this.gameMode = mode ?? null;
@@ -57,6 +57,14 @@ export class Game {
       switch (message.type) {
         case 'connection':
           console.log('Connected to game server');
+          // Set the correct paddle as player's paddle based on playerNumber
+          if (this.settings.playerNumber === 1) {
+            this.leftPaddle = new Paddle(50, true);
+            this.rightPaddle = new Paddle(this.canvas.width - 60, false);
+          } else {
+            this.leftPaddle = new Paddle(50, false);
+            this.rightPaddle = new Paddle(this.canvas.width - 60, true);
+          }
           break;
           
         case 'playerConnected':
@@ -93,10 +101,10 @@ export class Game {
             this.ball.setPosition(message.ballPos.x, message.ballPos.y);
           }
           if (message.player1PaddlePos) {
-            this.playerPaddle.setPosition(message.player1PaddlePos.y);
+            this.leftPaddle.setPosition(message.player1PaddlePos.y);
           }
           if (message.player2PaddlePos) {
-            this.computerPaddle.setPosition(message.player2PaddlePos.y);
+            this.rightPaddle.setPosition(message.player2PaddlePos.y);
           }
           if (message.score) {
             this.score.setScore(message.score.player1, message.score.player2);
@@ -166,8 +174,8 @@ export class Game {
     this.ctx.setLineDash([]);
 
     // Draw game objects
-    this.playerPaddle.draw(this.ctx);
-    this.computerPaddle.draw(this.ctx);
+    this.leftPaddle.draw(this.ctx);
+    this.rightPaddle.draw(this.ctx);
 
     // Only draw ball if not in countdown
     if (!this.isGameStartCountdown && !this.isWaitingForBallSpawn) {
