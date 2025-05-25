@@ -26,7 +26,13 @@ certs:
 	@mkcert -key-file $(PONG_CERT_DIR)/key.pem      		-cert-file $(PONG_CERT_DIR)/cert.pem      		 $(HOSTS)
 	@echo "→ Generating grafana cert…"
 	@mkcert -key-file $(GRAFANA_CERT_DIR)/grafana.key 		-cert-file $(GRAFANA_CERT_DIR)/grafana.crt 		 $(HOSTS)
+	@chmod 644 $(GRAFANA_CERT_DIR)/*.key || true
 	@echo "→ Generating prometheus cert…"
 	@mkcert -key-file $(PROMETHEUS_CERT_DIR)/prometheus.key -cert-file $(PROMETHEUS_CERT_DIR)/prometheus.crt $(HOSTS)
+	@chmod 644 $(PROMETHEUS_CERT_DIR)/*.key || true
 up:
 	docker-compose -f docker-compose.yml -f docker-compose.elk.yml up --build
+down:
+	docker-compose -f docker-compose.yml -f docker-compose.elk.yml down
+down-volumes:
+	docker-compose -f docker-compose.yml -f docker-compose.elk.yml down -v
