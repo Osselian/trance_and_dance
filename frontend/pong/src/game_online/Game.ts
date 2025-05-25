@@ -138,17 +138,17 @@ export class Game {
     });
 
     // Start the game loop
-    const gameLoop = (timestamp: number) => {
-      const deltaTime = timestamp - this.lastFrameTime;
-      this.lastFrameTime = timestamp;
+    // const gameLoop = (timestamp: number) => {
+    //   const deltaTime = timestamp - this.lastFrameTime;
+    //   this.lastFrameTime = timestamp;
 
-      this.update(deltaTime);
-      this.draw();
+    //   this.update(deltaTime);
+    //   this.draw();
 
-      this.animationFrameId = requestAnimationFrame(gameLoop);
-    };
+    //   this.animationFrameId = requestAnimationFrame(gameLoop);
+    // };
 
-    this.animationFrameId = requestAnimationFrame(gameLoop);
+    // this.animationFrameId = requestAnimationFrame(gameLoop);
   }
 
   private draw(): void {
@@ -198,7 +198,6 @@ export class Game {
         this.ctx.fillText('GO!', this.canvas.width / 2, this.canvas.height / 2);
       } else if (this.isGameStartCountdown) {
         this.isGameStartCountdown = false;
-        this.resetBall();
         this.ball.show();
       }
     }
@@ -207,14 +206,7 @@ export class Game {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
 
-    if (this.gameState === GameState.MODE_SELECTION) {
-      this.ctx.font = '40px Arial';
-      this.ctx.fillStyle = '#FFFFFF';
-      this.ctx.fillText('Choose game mode:', this.canvas.width / 2, this.canvas.height / 2 - 50);
-      this.ctx.font = '30px Arial';
-      // this.ctx.fillText('Press 1 to play against computer', this.canvas.width / 2, this.canvas.height / 2 + 20);
-      // this.ctx.fillText('Press 2 to play with a human player', this.canvas.width / 2, this.canvas.height / 2 + 60);
-    } else if (this.gameState === GameState.START) {
+    if (this.gameState === GameState.START) {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
       this.ctx.fillText('Press SPACE to start', this.canvas.width / 2, this.canvas.height / 2);

@@ -38,26 +38,6 @@ export class Paddle {
     this.moveDirection = null;
   }
 
-  public update(canvasHeight: number, deltaTime: number): void {
-    if (this.isMoving && this.moveDirection) {
-      // Accelerate
-      this.currentSpeed = Math.min(this.speed, this.currentSpeed + PADDLE_ACCELERATION * deltaTime);
-    } else {
-      // Decelerate
-      this.currentSpeed = Math.max(0, this.currentSpeed - PADDLE_ACCELERATION * deltaTime);
-    }
-
-    if (this.currentSpeed > 0 && this.moveDirection) {
-      if (this.moveDirection === 'up') {
-        this.position.y = Math.max(0, this.position.y - this.currentSpeed * deltaTime);
-      } else {
-        this.position.y = Math.min(
-          canvasHeight - this.size.height,
-          this.position.y + this.currentSpeed * deltaTime
-        );
-      }
-    }
-  }
 
   public getPosition(): Position {
     return { ...this.position };
