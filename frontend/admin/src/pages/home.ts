@@ -32,7 +32,7 @@ export function initHome() {
 
   btnVsCPU?.addEventListener('click', () => location.hash = '#/play/cpu');
   btn1v1?.addEventListener('click', () => location.hash = '#/play/1v1');
-  btnT?.addEventListener('click',   () => location.hash = '#/play/tournament');
+  btnT?.addEventListener('click',   () => location.hash = '#/tournament');
 
    btnSearch?.addEventListener('click', async () => {
      btnSearch.disabled    = true;
