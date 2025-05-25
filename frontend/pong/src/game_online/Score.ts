@@ -30,6 +30,11 @@ export class Score {
     return { ...this.score };
   }
 
+  public setScore(player: number, computer: number): void {
+    this.score = { player, computer };
+    this.updateDisplay();
+  }
+
   public hasWinner(): boolean {
     return this.score.player >= SCORE_TO_WIN || this.score.computer >= SCORE_TO_WIN;
   }
