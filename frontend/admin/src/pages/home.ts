@@ -5,13 +5,13 @@
      <h1 class="-mt-32 text-white text-5xl font-bold mb-8">Welcome to PONG!</h1>
      <div id="game-buttons" class="flex space-x-6 hidden">
        <button id="vs-computer"   class="bg-blue-500   hover:bg-blue-600   text-white text-2xl font-semibold py-4 px-8 rounded-lg">
-         User VS AI
+         You VS AI
        </button>
        <button id="one-vs-one"     class="bg-green-500  hover:bg-green-600  text-white text-2xl font-semibold py-4 px-8 rounded-lg">
-         One VS one
+         1:1 locally
        </button>
         <button id="search-quick"     class="bg-yellow-500 hover:bg-yellow-600 text-white text-2xl font-semibold py-4 px-8 rounded-lg">
-          Search quick
+         Find 1:1 online
         </button>
        <button id="tournament"     class="bg-purple-500 hover:bg-purple-600 text-white text-2xl font-semibold py-4 px-8 rounded-lg">
          Tournament
@@ -36,7 +36,7 @@ export function initHome() {
 
    btnSearch?.addEventListener('click', async () => {
      btnSearch.disabled    = true;
-     btnSearch.textContent = 'Search for a game';
+     btnSearch.textContent = 'Searching for a an opponent...';
 
      try {
        // 1) старт поиска
