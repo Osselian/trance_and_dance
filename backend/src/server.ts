@@ -37,17 +37,6 @@ fastify.register(fastifyCors, {
 	methods: ['GET', 'POST', 'DELETE', 'OPTIONS', 'PUT']
 });
 
-fastify.register(fastifyStatic, {
-  root: path.join(__dirname, '../data'),
-  prefix: '/img/',
-  decorateReply: true,       // по умолчанию
-});
-
-fastify.register(fastifyStatic, {
-  root: path.join(__dirname, '../uploads'),
-  prefix: '/uploads/',
-  decorateReply: false,
-});
 
 
 fastify.register(fastifyCookie);
@@ -61,6 +50,17 @@ fastify.register(fastifyMultipart);
 fastify.register(require('@fastify/websocket'));
 registerRoutes(fastify);
 
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../data'),
+  prefix: '/img/',
+  decorateReply: true,       // по умолчанию
+});
+
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../uploads'),
+  prefix: '/uploads/',
+  decorateReply: false,
+});
 //server start
 fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
 	if (err) {

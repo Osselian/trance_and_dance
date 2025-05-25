@@ -54,6 +54,7 @@ export class MatchmakingController {
 	}
 
 	private async checkForPendingMatch(req: FastifyRequest, reply: FastifyReply) {
+		console.log('checkForPendingMatch hit for user', (req.user as any)?.id);
 		const user = req.user as any
 		try {
 			const match = await this.mmService.findMatchForPlayer(user.id);
