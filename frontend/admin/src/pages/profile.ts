@@ -7,8 +7,8 @@ export const profileView = `
       <div class="relative w-24 h-24 rounded-full overflow-hidden border">
         <img
           id="avatar-img"
-          src="/img/default-avatar.jpg"
-          onerror="this.onerror=null;this.src='/img/default-avatar.jpg'"
+          src="/img/default_avatar.jpg"
+          onerror="this.onerror=null;this.src='/img/default_avatar.jpg'"
           class="w-full h-full object-cover"
         />
         <input

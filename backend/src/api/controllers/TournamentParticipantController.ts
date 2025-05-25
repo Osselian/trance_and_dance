@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { TournamentParticipantService } from "../../services/TournamentParticipantService";
+import { RegisterParticipantDto } from "../../dtos/TournamentParticipantDto";
 
 export class TournamentParticipantController {
 	private participantService = new TournamentParticipantService();
@@ -21,6 +22,8 @@ export class TournamentParticipantController {
 		const tournamentId = Number((req.params as any).id);
 		const userId = (req.user as any).id;
 		try {
+			const dto = req.body as RegisterParticipantDto;
+			dto.tournamentName ??= (req.user as any).username;
 			const part = await this.participantService.register(tournamentId, userId);
 			reply.status(201).send(part);
 		} catch (err) {
