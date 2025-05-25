@@ -60,6 +60,7 @@ model Match {
     startAt         DateTime         @default(now())
     playedAt        DateTime         @default(now())
     result          String?
+	winnerId        Int              @default(-1)
     tournamentMatch TournamentMatch?
 }
 
@@ -98,7 +99,6 @@ model TournamentMatch{
 	round        Int
 	bracketPos   Int
 	nextMatchId  Int?
-	winnerId     Int?
 	createdAt    DateTime   @default(now())
 
 	@@index([tournamentId, round])
@@ -185,6 +185,7 @@ enum MessageType {
 
 enum TournamentStatus {
 	REGISTRATION
+	PENDING
 	READY
 	ONGOING
 	COMPLETED

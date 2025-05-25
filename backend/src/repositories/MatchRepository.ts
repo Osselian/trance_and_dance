@@ -44,13 +44,13 @@ export class MatchRepository{
 		});
 	}
 
-	async completeMatch(matchId: number, result: string): Promise<Match> {
+	async completeMatch(matchId: number, winnerId: number): Promise<Match> {
 		return prisma.match.update({
 			where: {id: matchId},
 			data: {
 				status: MatchStatus.COMPLETED, 
 				playedAt: new Date(),  
-				result: result}
+				winnerId}
 		});
 	}
 

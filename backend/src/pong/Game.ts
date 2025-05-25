@@ -46,6 +46,25 @@ export class Game {
 		this.checkCollisions();
 		this.checkScore();
 	}
+
+	public getState(): GamesStateDto {
+		const state = 
+		{
+			type: "gameState",
+			ballPos: this.isWaitingForBallSpawn ? null : this.ball.getPosition(),
+			player1PaddlePos: this.player1Paddle.getPosition(),
+			player2PaddlePos: this.player2Paddle.getPosition(),
+			score: this.score.getScore(),
+			gameState: this.gameState,
+			isWaitingForBallSpawn: this.isWaitingForBallSpawn,
+			lastScoreTime: this.lastScoreTime,
+			hasWinner: this.score.hasWinner(),
+			winnerId: this.score.getWinner()
+		} as GamesStateDto;
+
+		return state;
+	}
+
 		
 	public reset(){
 		this.score.reset();
@@ -68,24 +87,6 @@ export class Game {
 		} else if (direction === 'stop') {
 			paddle.stop();
 		}
-	}
-
-	public getState(): GamesStateDto {
-		const state = 
-		{
-			type: "gameState",
-			ballPos: this.isWaitingForBallSpawn ? null : this.ball.getPosition(),
-			player1PaddlePos: this.player1Paddle.getPosition(),
-			player2PaddlePos: this.player2Paddle.getPosition(),
-			score: this.score.getScore(),
-			gameState: this.gameState,
-			isWaitingForBallSpawn: this.isWaitingForBallSpawn,
-			lastScoreTime: this.lastScoreTime,
-			hasWinner: this.score.hasWinner(),
-			winnerId: this.score.getWinner()
-		} as GamesStateDto;
-
-		return state;
 	}
 
 	private updatePaddlePositions(deltaTime: number): void {
