@@ -1,5 +1,5 @@
 
-HOSTS := localhost 10.19.247.244 127.0.0.1 ::1 backend frontend-admin frontend-pong grafana prometheus elasticsearch logstash
+HOSTS := localhost 192.168.10.179 127.0.0.1 ::1 backend frontend-admin frontend-pong grafana prometheus elasticsearch logstash
 
 
 # Папки, куда будем писать pem-файлы
