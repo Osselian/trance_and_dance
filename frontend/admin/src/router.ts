@@ -7,7 +7,8 @@ import { startVsComputer, start1v1}  from '../../pong/src/game/gameLogic.js'
 import { startQuickGame }            from '../../pong/src/game_online/gameLogic.js'
 import { friendsView, initFriends }  from './pages/friends'
 import { ChatPage }                  from './pages/chat'
-import { tournamentView, initTournament } from './pages/tournament';
+import { tournamentView, initTournament } from './pages/tournament'
+export const BACK = import.meta.env.VITE_BACK_URL ?? 'localhost:3000'
 
 export const router = {
   navigate(to: string) {
@@ -58,13 +59,12 @@ else if (location.hash.startsWith('#/play/quick/')) {
     init: () => {
       const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
       // здесь подставляем реальный IP:порт бэкенда
-      const BACKEND = '10.19.248.65:3000';
       const token = encodeURIComponent(localStorage.getItem('token') || '');
       const ws = new WebSocket(
-        `${wsProtocol}://${BACKEND}/ws?matchId=${matchId}&token=${token}`
+        `${wsProtocol}://${BACK}/ws?matchId=${matchId}&token=${token}`
       );
       ws.addEventListener('open', () => {
-        console.log('Connected to WS on', BACKEND);
+        console.log('Connected to WS on', BACK);
       });
 
 ws.addEventListener('message', ({ data }) => {
