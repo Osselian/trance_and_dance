@@ -64,7 +64,7 @@ export class MatchmakingController {
 				reply.send({found: true, matchId: match.id});
 		}
 		catch (err) {
-			const msg = err instanceof Error ? err.message : 'Error';
+			const msg = err instanceof Error ? err.message : 'Error in checkForPendingMatch';
 			reply.status(500).send({ message: msg});
 		}
 	}
