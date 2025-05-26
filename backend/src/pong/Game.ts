@@ -178,7 +178,7 @@ export class Game {
 	}
 
 	private setCountDown(currentTime: number) {
-		if (this.isWaitingForBallSpawn >= 0) {
+		if (this.isWaitingForBallSpawn > 0) {
 			const timeElapsed = currentTime - this.lastScoreTime;
 			const segmentDuration = this.SCORE_DELAY / 4; // Делим на 3 сегмента
 
