@@ -145,13 +145,14 @@ ws.addEventListener('message', ({ data }) => {
   }
 }
   else {
-    route = routes[location.hash] ?? { view: notFoundView }
+    // ЗДЕСЬ НЕ КОНСТАНТА, А ПРИСВАИВАНИЕ
+    const [rawPath] = location.hash.split('?')
+    route = routes[rawPath] ?? { view: notFoundView, init: () => {} }
   }
 
-
+  // теперь route гарантированно инициализирован
   if (route.view) outlet.innerHTML = route.view
   else outlet.innerHTML = ''
-
 
   if (route.init) await route.init()
 }

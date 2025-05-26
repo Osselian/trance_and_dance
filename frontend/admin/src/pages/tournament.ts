@@ -1,16 +1,14 @@
 import { AuthAPI } from '../api/auth';
-import { BASE } from '../api/auth'; 
+import { BASE }    from '../api/auth';
 
 export const tournamentView = `
 <section class="p-6">
-  <!-- === Блок создания / информации о турнире === -->
   <div id="create-or-info" class="mb-6">
-    <!-- если параметра ?id нет — показываем форму создания -->
     <div id="create-block" class="space-y-2">
       <input id="tournament-name"
-              type="text"
-              class="w-full p-2 bg-gray-700 rounded text-white"
-              placeholder="Название турнира (опционально)" />
+             type="text"
+             class="w-full p-2 bg-gray-700 rounded text-white"
+             placeholder="Название турнира (опционально)" />
       <select id="required-players" class="p-2 bg-gray-700 rounded text-white">
         <option value="4">4 игрока</option>
         <option value="8" selected>8 игроков</option>
@@ -21,7 +19,6 @@ export const tournamentView = `
         Создать турнир
       </button>
     </div>
-    <!-- после создания показываем имя и id -->
     <div id="info-block" class="hidden">
       <h1 class="text-3xl font-bold mb-2">
         Tournament: <span id="tournament-name-display"></span>
@@ -30,7 +27,6 @@ export const tournamentView = `
     </div>
   </div>
 
-  <!-- Список матчей -->
   <table class="min-w-full bg-gray-800 text-white rounded-lg overflow-hidden">
     <thead class="bg-gray-700">
       <tr>
@@ -41,12 +37,9 @@ export const tournamentView = `
         <th class="px-4 py-2">Результат</th>
       </tr>
     </thead>
-    <tbody id="matches-list" class="divide-y divide-gray-700">
-      <!-- Rows dynamically added here -->
-    </tbody>
+    <tbody id="matches-list" class="divide-y divide-gray-700"></tbody>
   </table>
 
-  <!-- Кнопка присоединиться -->
   <div class="mt-4">
     <button id="join-tournament-btn"
             class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded hidden">
@@ -64,13 +57,11 @@ interface Match {
   result?: string;
 }
 
-
 export async function initTournament(): Promise<void> {
-  // 1. Получаем профиль сразу, чтобы знать userId
-  const user = await AuthAPI.getProfile();
-  const userId = user.id;
-
-  const token = localStorage.getItem('token')!;
+  // 1) Контекст
+  const user    = await AuthAPI.getProfile();
+  const userId  = user.id;
+  const token   = localStorage.getItem('token')!;
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
@@ -85,19 +76,38 @@ export async function initTournament(): Promise<void> {
   const joinBtn     = document.getElementById('join-tournament-btn') as HTMLButtonElement;
   const tbody       = document.getElementById('matches-list')!;
 
-  const params = new URLSearchParams(window.location.search);
-  const tourId  = params.get('id');
-
-  // Функция рендера турнира
+  // 2) Функция отрисовки турнира
   async function renderTournament(id: string) {
-    const res = await fetch(`${BASE}/tournament/${id}`, { headers });
-    const tour = await res.json();
+    // 2.1) Загружаем турнир
+    const tourRes = await fetch(`${BASE}/tournament/${id}`, { headers });
+    if (!tourRes.ok) {
+      console.error('Tour fetch failed:', tourRes.status, await tourRes.text());
+      return;
+    }
+    const tour = await tourRes.json();
+    console.log('GOT TOUR object:', tour);
 
-    nameDisplay.textContent = tour.name || tour.id;
-    idDisplay.textContent   = tour.id.toString();
+    // 2.2) Загружаем участников
+    let participants: any[] = [];
+    try {
+      const partsRes = await fetch(
+        `${BASE}/tournamentParticipant/${id}/participants`,
+        { headers }
+      );
+      if (!partsRes.ok) throw new Error(`HTTP ${partsRes.status}`);
+      participants = await partsRes.json();
+      console.log('GOT PARTICIPANTS:', participants);
+    } catch (err) {
+      console.error('Error loading participants:', err);
+    }
 
+    // 2.3) Отрисовываем заголовок и ID
+    nameDisplay.textContent = tour.name || '';
+    idDisplay.textContent   = String(tour.id);
+
+    // 2.4) Отрисовываем таблицу матчей
     tbody.innerHTML = '';
-    tour.matches.forEach((m: any) => {
+    for (const m of tour.matches || []) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="px-4 py-2">${m.num}</td>
@@ -107,51 +117,80 @@ export async function initTournament(): Promise<void> {
         <td class="px-4 py-2">${m.result || ''}</td>
       `;
       tbody.appendChild(tr);
-    });
+    }
 
-    // здесь используем userId
-    const participantsCount = tour.participants.length;
-    const isAlreadyIn = tour.participants.some((u: any) => u.id === userId);
-
-    if (participantsCount < tour.requiredPlayers && !isAlreadyIn) {
+    // 2.5) Показываем или скрываем кнопку «Присоединиться»
+    const count = participants.length;
+    const isIn  = participants.some(p => p.id === userId);
+    if (count < tour.requiredPlayers && !isIn) {
       joinBtn.classList.remove('hidden');
     } else {
       joinBtn.classList.add('hidden');
     }
   }
 
+  // 3) Читаем tourId из hash
+  const [, qs] = window.location.hash.split('?');
+  let tourId  = new URLSearchParams(qs).get('id');
+
+  // 4) Начальное состояние UI
+  if (!tourId) {
+    const listRes = await fetch(`${BASE}/tournament`, { headers });
+    if (listRes.ok) {
+      const allTours: any[] = await listRes.json();
+      // Выбираем первый в статусе REGISTRATION и где есть место
+      const open = allTours.find(t =>
+        t.status === 'REGISTRATION' &&
+        t.participants.length < t.requiredPlayers
+      );
+      if (open) {
+        tourId = String(open.id);
+      }
+    }
+  }
+
+  // 4) В зависимости от tourId либо создаём, либо показываем
   if (tourId) {
+    // Если нашли существующий турнир или зашли по ?id=…
     createBlock.classList.add('hidden');
     infoBlock.classList.remove('hidden');
     await renderTournament(tourId);
   } else {
+    // Ни одного турнира нет — показываем форму создания
     createBlock.classList.remove('hidden');
     infoBlock.classList.add('hidden');
   }
 
+  // 5) Обработчик «Создать турнир»
   createBtn.addEventListener('click', async () => {
-    const size = parseInt(selectSize.value, 10);
-    const rawName = (document.getElementById('tournament-name') as HTMLInputElement)
-                    .value
-                    .trim();
-    const name = rawName || user.username;
+    const size      = parseInt(selectSize.value, 10);
+    const rawName   = (document.getElementById('tournament-name') as HTMLInputElement).value.trim();
+    const name      = rawName || user.username;
     const startDate = new Date().toISOString();
-    const endDate   = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-    const payload = { requiredPlayers: size, name, startDate, endDate };
+    const endDate   = new Date(Date.now() + 60*60*1000).toISOString();
+
     const res = await fetch(`${BASE}/tournament`, {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ requiredPlayers: size, name, startDate, endDate })
     });
     if (!res.ok) {
       const err = await res.json();
       return alert('Ошибка: ' + err.message);
     }
     const tour = await res.json();
-    window.location.search = '?id=' + tour.id;
+    console.log('Created tournament, id =', tour.id);
+
+    // Сразу переключаем UI и перерисовываем
+    createBlock.classList.add('hidden');
+    infoBlock.classList.remove('hidden');
+    window.location.hash = `#/tournament?id=${tour.id}`;
+    await renderTournament(String(tour.id));
   });
 
+  // 6) Обработчик «Присоединиться»
   joinBtn.addEventListener('click', async () => {
+    if (!tourId) return;
     const res = await fetch(`${BASE}/tournament/${tourId}/register`, {
       method: 'POST',
       headers,
@@ -161,6 +200,6 @@ export async function initTournament(): Promise<void> {
       const err = await res.json();
       return alert('Не удалось присоединиться: ' + err.message);
     }
-    await renderTournament(tourId!);
+    await renderTournament(tourId);
   });
 }

@@ -57,8 +57,8 @@ export class TournamentService {
 		return participant;
 	}
 
-	async getTournament(id: number): Promise<Tournament[]> {
-		return this.tournamentRepo.findActive();
+	async getTournament(id: number): Promise<Tournament| null > {
+		return this.tournamentRepo.findById(id);
 	}
 
 	async getActiveTournaments(): Promise<Tournament[]> {
