@@ -19,7 +19,7 @@ export class Paddle {
   }
 
   public draw(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = this.isPlayer ? '#00FF00' : '#FF0000'; // Green for player, Red for opponent
+    ctx.fillStyle = this.isPlayer ? '#00FF00' : '#F08080'; // Green for player, Red for opponent
     ctx.fillRect(
       this.position.x,
       Math.round(this.position.y),

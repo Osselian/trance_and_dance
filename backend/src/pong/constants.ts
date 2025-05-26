@@ -6,7 +6,7 @@ export const PADDLE_ACCELERATION = 2000;
 export const INITIAL_BALL_SPEED = 480;
 export const BALL_SPEED_INCREMENT = 20;
 export const MAX_BALL_SPEED = 2000;
-export const SCORE_TO_WIN = 5;
+export const SCORE_TO_WIN = 20;
 
 export const COLORS = {
   PADDLE: '#FFFFFF',
