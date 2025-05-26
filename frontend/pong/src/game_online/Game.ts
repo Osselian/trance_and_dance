@@ -91,6 +91,29 @@ export class Game {
       }
     });
 
+	document.addEventListener('keyup', (event) => {
+		if (this.gameState !== GameState.PLAYING) return;
+
+		let direction: 'stop' | null = null;
+		switch (event.key) {
+			case 'ArrowUp':
+			case 'w':
+			case 'W':
+			case 'ArrowDown':
+			case 's':
+			case 'S':
+				direction = 'stop';
+				break;
+		}
+
+		if (direction) {
+			this.ws.send(JSON.stringify({
+				type: 'move',
+				direction: direction
+			}));
+		}
+	});
+
       this.ws.send(JSON.stringify({ type: 'ready' }));
     // Start the game loop
     // const gameLoop = (timestamp: number) => {
