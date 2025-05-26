@@ -1,4 +1,6 @@
- export const homeView = `
+import { BASE } from '../api/auth'; 
+
+export const homeView = `
  <section class="relative w-full h-[calc(100vh-3.6rem)] overflow-hidden">
    <img src="/img/home.png" alt="Главная картинка" class="absolute inset-0 w-full h-full object-cover" />
    <div class="relative z-10 flex flex-col items-center justify-center h-full bg-black/40 pt-16">
@@ -20,7 +22,6 @@
    </div>
  </section>
  `;
-const API = 'https://10.19.248.65:3000';
 
 export function initHome() {
   // Показываем кнопки, только если есть токен
@@ -37,7 +38,7 @@ export function initHome() {
   // Простые переходы
   btnVsCPU?.addEventListener('click', () => location.hash = '#/play/cpu');
   btn1v1?.addEventListener('click',   () => location.hash = '#/play/1v1');
-  btnT?.addEventListener('click',     () => location.hash = '#/play/tournament');
+  btnT?.addEventListener('click',     () => location.hash = '#/tournament');
 
   // Поиск Quick-Game
   btnSearch?.addEventListener('click', async () => {
@@ -53,7 +54,7 @@ export function initHome() {
 
     try {
       // 1) Кладёмся в очередь
-      let res = await fetch(`${API}/matchmaking/join`,    { method: 'POST', headers });
+      let res = await fetch(`${BASE}/matchmaking/join`,    { method: 'POST', headers });
       if (!res.ok) throw new Error(`Error ${res.status}`);
 
       // 2) Пуллим, пока не найдём matchId
@@ -62,7 +63,7 @@ export function initHome() {
         // Ждём 1 секунду между запросами
         await new Promise(r => setTimeout(r, 1000));
 
-        res = await fetch(`${API}/matchmaking/checkPending`, { headers });
+        res = await fetch(`${BASE}/matchmaking/checkPending`, { headers });
         if (!res.ok) throw new Error(`Error ${res.status}`);
 
         // Ожидаем { found: boolean; matchId?: string }

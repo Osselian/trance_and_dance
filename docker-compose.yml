@@ -29,7 +29,6 @@ services:
     build:
       context: ./frontend
       dockerfile: admin/Dockerfile
-    container_name: frontend-admin
     env_file:
       - ./frontend/admin/.env
     volumes:
@@ -48,7 +47,6 @@ services:
     build:
       context: ./frontend/pong
       dockerfile: Dockerfile
-    container_name: frontend-pong
     volumes:
       - ./frontend/pong/certs:/app/certs
     ports:

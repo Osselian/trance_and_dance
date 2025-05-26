@@ -20,7 +20,7 @@ export class Game {
   private animationFrameId: number | null = null;
   private lastScoreTime: number = 0;
   private readonly SCORE_DELAY = 1000; // 1 second delay
-  private isWaitingForBallSpawn: boolean = false;
+  private isWaitingForBallSpawn: number = -1;
   private isGameStartCountdown: boolean = false;
   private lastFrameTime: number = 0;
   private targetPaddlePositions: { player: number; computer: number } | null = null;
@@ -198,21 +198,45 @@ export class Game {
       this.ctx.textBaseline = 'middle';
 
       // Show countdown numbers and GO! with different colors
-      if (timeElapsed < 250) {
-        this.ctx.fillStyle = '#FF0000'; // Red
-        this.ctx.fillText('3', this.canvas.width / 2, this.canvas.height / 2);
-      } else if (timeElapsed < 500) {
-        this.ctx.fillStyle = '#FFA500'; // Orange
-        this.ctx.fillText('2', this.canvas.width / 2, this.canvas.height / 2);
-      } else if (timeElapsed < 750) {
-        this.ctx.fillStyle = '#FFFF00'; // Yellow
-        this.ctx.fillText('1', this.canvas.width / 2, this.canvas.height / 2);
-      } else if (timeElapsed < 1000) {
-        this.ctx.fillStyle = '#00FF00'; // Green
-        this.ctx.fillText('GO!', this.canvas.width / 2, this.canvas.height / 2);
-      } else if (this.isGameStartCountdown) {
-        this.isGameStartCountdown = false;
-        this.ball.show();
+      // if (timeElapsed < 250) {
+      //   this.ctx.fillStyle = '#FF0000'; // Red
+      //   this.ctx.fillText('3', this.canvas.width / 2, this.canvas.height / 2);
+      // } else if (timeElapsed < 500) {
+      //   this.ctx.fillStyle = '#FFA500'; // Orange
+      //   this.ctx.fillText('2', this.canvas.width / 2, this.canvas.height / 2);
+      // } else if (timeElapsed < 750) {
+      //   this.ctx.fillStyle = '#FFFF00'; // Yellow
+      //   this.ctx.fillText('1', this.canvas.width / 2, this.canvas.height / 2);
+      // } else if (timeElapsed < 1000) {
+      //   this.ctx.fillStyle = '#00FF00'; // Green
+      //   this.ctx.fillText('GO!', this.canvas.width / 2, this.canvas.height / 2);
+      // } else if (this.isGameStartCountdown) {
+      //   this.isGameStartCountdown = false;
+      //   this.ball.show();
+      // }
+      switch (this.isWaitingForBallSpawn) {
+        case 4:
+          this.ctx.fillStyle = '#FF0000'; // Red
+          this.ctx.fillText('3', this.canvas.width / 2, this.canvas.height / 2);
+          break;
+        case 3:
+          this.ctx.fillStyle = '#FFA500'; // Orange
+          this.ctx.fillText('2', this.canvas.width / 2, this.canvas.height / 2);
+          break;
+        case 2:
+          this.ctx.fillStyle = '#FFFF00'; // Yellow
+          this.ctx.fillText('1', this.canvas.width / 2, this.canvas.height / 2);
+          break;
+        case 1:
+          this.ctx.fillStyle = '#00FF00'; // Green
+          this.ctx.fillText('GO!', this.canvas.width / 2, this.canvas.height / 2);
+          break;
+        case 0:
+          this.isGameStartCountdown = false;
+          this.ball.show();
+          break;
+        default:
+          break;
       }
     }
 
