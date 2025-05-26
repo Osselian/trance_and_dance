@@ -279,7 +279,7 @@ export class Game {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
       const winner = this.score.getWinner();
-      this.ctx.fillText(`${winner === 'player' ? 'You' : 'Computer'} won! Press SPACE to play again`,
+      this.ctx.fillText(`${winner === 'player' ? 'Left Paddle' : 'Right paddle'} won! Press SPACE to play again`,
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }
