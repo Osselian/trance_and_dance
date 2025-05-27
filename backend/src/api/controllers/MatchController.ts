@@ -9,6 +9,7 @@ export class MatchController {
 	public registerRoutes(): void {
 		this.fastify.get('/:id', this.getMatch.bind(this));
 		this.fastify.post('/:id/complete', this.completeMatch.bind(this));
+		this.fastify.post('/invite/:otherId', this.invite.bind(this));
 	}
 
 
@@ -36,4 +37,16 @@ export class MatchController {
 			reply.status(400).send({ message: msg});
 		}
 	}
+
+  private async invite(req: FastifyRequest, reply: FastifyReply) {
+    const userId    = (req.user as any).id as number;
+    const otherId   = Number((req.params as any).otherId);
+    try {
+      const match = await this.matchRepo.createMatch(userId, otherId);
+      // возвращаем именно { matchId }
+      reply.status(201).send({ matchId: match.id });
+    } catch (err: any) {
+      reply.status(400).send({ message: err.message });
+    }
+  }
 }

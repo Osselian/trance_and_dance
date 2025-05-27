@@ -83,10 +83,37 @@ export async function ChatPage(): Promise<HTMLElement> {
     inputWrapper.classList.remove('hidden');
   }
 
+function renderPongInvite(matchId: number, fromUserId: number) {
+  const inviteEl = document.createElement('div');
+  inviteEl.className = 'p-2 bg-blue-100 rounded mb-2';
+
+  // Можно подтянуть имя через friends/fetch или хранить в conv
+  const name = fromUserId === currentUserId ? 'Вы' : 'Игрок';
+  inviteEl.textContent = `${name} приглашает вас в Pong. `;
+
+  const accept = document.createElement('button');
+  accept.textContent = 'Принять';
+  accept.className = 'ml-2 p-1 bg-green-500 text-white rounded';
+  accept.onclick = () => {
+    router.navigate(`#/play/quick/${matchId}`);
+  };
+
+  inviteEl.append(accept);
+  chatWindow.append(inviteEl);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
   // Добавление сообщения в окно
   function appendMessage(m: Message) {
-
-    
+      try {
+    const data = JSON.parse(m.content);
+    if (data.type === 'pong-invite' && data.matchId) {
+      renderPongInvite(data.matchId, m.senderId);
+      return;
+    }
+  } catch {
+    // не JSON — рисуем обычный текст
+  }
     const msgEl = document.createElement('div');
     msgEl.className = m.senderId === currentUserId ? 'text-right' : 'text-left';
     msgEl.textContent = m.content;
@@ -234,18 +261,22 @@ export async function ChatPage(): Promise<HTMLElement> {
     }
   }
 
-  // Приглашение в Pong
+    // Приглашение в Pong
   async function invitePong() {
     if (!selectedUserId) return;
-    // 1) создаём матч и получаем matchId
-    const { matchId } = await MatchAPI.createMatchInvite(selectedUserId);
-    // 2) сообщаем игроку в чат о приглашении
-    await ChatAPI.sendMessage(
-      selectedUserId,
-      JSON.stringify({ type: 'pong-invite', matchId })
-    );
-    // 3) сразу переводим инициатора в лобби ожидания
-    router.navigate(`#/play/quick/${matchId}`);
+    pongBtn.disabled = true;
+    try {
+      const { matchId } = await MatchAPI.createMatchInvite(selectedUserId);
+      await ChatAPI.sendMessage(
+        selectedUserId,
+        JSON.stringify({ type: 'pong-invite', matchId })
+      );
+      router.navigate(`#/play/quick/${matchId}`);
+    } catch (err: any) {
+      alert('Не удалось пригласить в Pong: ' + err.message);
+    } finally {
+      pongBtn.disabled = false;
+    }
   }
 
   // --- Привязка событий ---

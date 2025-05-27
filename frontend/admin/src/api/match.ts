@@ -26,7 +26,7 @@ export const MatchAPI = {
    * и возвращать { matchId: number }.
    */
   createMatchInvite: (otherUserId: number): Promise<MatchInviteResponse> =>
-    post(`/matchmaking/invite/${otherUserId}`, {}),
+    post(`/match/invite/${otherUserId}`, {}),
 
   /**
    * Если понадобятся другие методы (например, принимкния инвайта),
