@@ -68,14 +68,12 @@ export class TournamentChatNotifier {
 					.sendSystemMessage(participant.userId, message, this.type);
 			}
 			catch (err: any) {
-				if (err.code === 'P2003') {
-					console.warn(
-						`ChatMessage skipped for user ${participant.userId}: foreign key violation`,
-									err.meta
-						);
-				} else {
-						throw err;
-					}
+				// Добавляем более подробное логирование
+				console.warn(
+					`Failed to send system message to user ${participant.userId}: ${err.message}`,
+					err
+				);
+				// Продолжаем с другими участниками
 			}
 		}
 	}

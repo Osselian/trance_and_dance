@@ -3,11 +3,13 @@ import { ChatMessageRepository } from "../repositories/ChatMessageRepository";
 import { BlockService } from "./BlockService";
 import { MessageType } from "@prisma/client";
 import { ConversationRow } from '../repositories/ChatMessageRepository';
+import { SystemUserService } from './SystemUserService';
 
 export class ChatService {
 	constructor(
 		private chatRepo = new ChatMessageRepository(),
-		private blockService = new BlockService()
+		private blockService = new BlockService(),
+		private systemUserService = new SystemUserService()
 	){}
 
 	async sendMessage(senderId: number, receiverId: number, content: string) {
@@ -44,8 +46,9 @@ export class ChatService {
 	}
 
 	async sendSystemMessage(receiverId: number, content: string, type: MessageType) {
-		const SYSTEM_USER_ID = 0;
-		return this.chatRepo.sendMessage(SYSTEM_USER_ID, receiverId, content, type);
+		// Получаем актуального системного пользователя
+		const systemUser = await this.systemUserService.ensureSystemUserExists();
+		return this.chatRepo.sendMessage(systemUser.id, receiverId, content, type);
 	}
 
   public async listConversations(userId: number): Promise<ConversationRow[]> {

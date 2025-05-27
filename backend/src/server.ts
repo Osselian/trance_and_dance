@@ -12,6 +12,7 @@ import fastifyStatic from '@fastify/static';
 import {fastifyWebsocket} from '@fastify/websocket';
 import {TournamentService} from './services/TournamentService';
 import { TournamentMatchService } from './services/TournamentMatchService';
+import { SystemUserService } from './services/SystemUserService';
 
 // server init
 const fastify = Fastify(
@@ -61,13 +62,30 @@ fastify.register(fastifyStatic, {
   prefix: '/uploads/',
   decorateReply: false,
 });
-//server start
+
+// Добавьте перед запуском сервера
+const initSystemUser = async () => {
+  try {
+    const systemUserService = new SystemUserService();
+    await systemUserService.ensureSystemUserExists();
+    console.log('System user initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize system user:', error);
+  }
+};
+
+// Инициализируем системного пользователя перед запуском сервера
+fastify.addHook('onReady', async () => {
+  await initSystemUser();
+});
+
+// Запуск сервера
 fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
-	if (err) {
-		fastify.log.error(err);
-		process.exit(1);
-	}
-	fastify.log.info('Server starts at ${address}');
+  if (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+  fastify.log.info(`Server starts at ${address}`);
 });
 
 const mmService = new MatchmakingService();
