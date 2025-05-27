@@ -273,7 +273,7 @@ export class Game {
       } else if (this.WinnerId !== -1 && this.WinnerId !== this.settings.playerNumber) {
         win_or_lose = 'lost';
       }
-      this.ctx.fillText(`Player ${this.settings.playerNumber}) ${win_or_lose}!`,
+      this.ctx.fillText(`Player ${this.settings.playerNumber} ${win_or_lose}!`,
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }
