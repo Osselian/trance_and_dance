@@ -45,34 +45,36 @@ export class MatchWebSocketService {
 	public async handleNewConnection(socket: WebSocket, request: FastifyRequest) {
 		try 
 		{
-			const userId = (request.user as any).id; 
-			const matchId = await this.getMatchId(request, socket, userId);
-			if (!matchId)
-				return;
+			userMutex.runExclusive(async () => {
+				const userId = (request.user as any).id;
+				const matchId = await this.getMatchId(request, socket, userId);
+				if (!matchId)
+					return;
 
-			//check is user was disconnected
-			const existingConnection = this.userConnections.get(userId);
-			if (existingConnection && existingConnection.disconnectTimeout) {
-				clearTimeout(existingConnection.disconnectTimeout);
-				console.log(`User ${userId} reconnected to match ${matchId}`);
-			}
+				//check is user was disconnected
+				const existingConnection = this.userConnections.get(userId);
+				if (existingConnection && existingConnection.disconnectTimeout) {
+					clearTimeout(existingConnection.disconnectTimeout);
+					console.log(`User ${userId} reconnected to match ${matchId}`);
+				}
 
-			//create unique socketId
-			const socketId = `${userId}-${Date.now()}`;
+				//create unique socketId
+				const socketId = `${userId}-${Date.now()}`;
 
-			//register user connection
-			this.userConnections.set(userId, {
-				socketId,
-				matchId,
-				lastActivity: Date.now(),
-				disconnectTimeout: undefined
+				//register user connection
+				this.userConnections.set(userId, {
+					socketId,
+					matchId,
+					lastActivity: Date.now(),
+					disconnectTimeout: undefined
+				});
+
+				const typedSocket = this.fillRoom(socket, userId, matchId);
+
+				this.setupActivityTracking(typedSocket, userId);
+				this.socketEventsSubscribtion(typedSocket);
+				this.notifyOnConnection(typedSocket, userId, matchId, this.rooms.get(matchId)!);
 			});
-
-			const typedSocket = this.fillRoom(socket, userId, matchId);
-
-			this.setupActivityTracking(typedSocket, userId);
-			this.socketEventsSubscribtion(typedSocket);
-			this.notifyOnConnection(typedSocket, userId, matchId, this.rooms.get(matchId)!);
 		}
 		catch {
 			(socket as WebSocket).close(1011, 'Unexpected error');
@@ -122,14 +124,9 @@ export class MatchWebSocketService {
 			const gameService = new GameHandler();
 			this.games.set(matchId, gameService);
 			
-			// Инициализируем карту номеров игроков для этого матча
-			userMutex.runExclusive(() => {
-				this.playerNumbers.set(matchId, new Map());
-			});
+			this.playerNumbers.set(matchId, new Map());
 		}
-		userMutex.runExclusive(() => {
-			typedSocket.playerNumber = this.getPlayerNumber(matchId, userId); // Изначально номер игрока не назначен
-		});
+		typedSocket.playerNumber = this.getPlayerNumber(matchId, userId); // Изначально номер игрока не назначен
 		
 		// Добавляем сокет в комнату
 		room.add(typedSocket);
