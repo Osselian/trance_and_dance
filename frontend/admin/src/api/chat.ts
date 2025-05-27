@@ -42,6 +42,7 @@ export interface Message {
   receiverId: number;
   content: string;
   createdAt: string;
+  type: string; 
 }
 
 export interface Conversation {

@@ -16,6 +16,9 @@ interface UIConversation {
 
 // Страница чата без WebSocket (REST-поллинг), с REST-приглашением в Pong
 export async function ChatPage(): Promise<HTMLElement> {
+
+  const shownInvites = new Set<number>();
+  const shownAlerts = new Set<number>();
   const me = await ChatAPI.getMe();
   const currentUserId = me.id;
 
@@ -105,15 +108,28 @@ function renderPongInvite(matchId: number, fromUserId: number) {
 
   // Добавление сообщения в окно
   function appendMessage(m: Message) {
-      try {
-    const data = JSON.parse(m.content);
-    if (data.type === 'pong-invite' && data.matchId) {
+    let data: any;
+    try {
+      data = JSON.parse(m.content);
+    } catch {
+      data = null;
+    }
+
+      // если это pong-invite и мы его уже показали — пропускаем
+    if (data?.type === 'pong-invite') {
+      if (shownInvites.has(m.id)) return;
+      shownInvites.add(m.id);
       renderPongInvite(data.matchId, m.senderId);
       return;
     }
-  } catch {
-    // не JSON — рисуем обычный текст
-  }
+    if (m.type === 'TOURNAMENT') {
+      if (!shownAlerts.has(m.id)) {
+        shownAlerts.add(m.id)
+        alert(m.content)    // <-- здесь ваш нативный алерт
+      }
+    // и при желании не рендерить в чате блок вовсе
+      return
+    }
     const msgEl = document.createElement('div');
     msgEl.className = m.senderId === currentUserId ? 'text-right' : 'text-left';
     msgEl.textContent = m.content;
@@ -187,9 +203,10 @@ function renderPongInvite(matchId: number, fromUserId: number) {
     }
     await checkBlock();
     chatWindow.innerHTML = '';
+    shownInvites.clear();
     showChatUI();
     await loadMessages();
-    pollTimer = window.setInterval(loadMessages, 5000);
+    pollTimer = window.setInterval(loadMessages, 3000);
   }
 
   // Загрузка сообщений
