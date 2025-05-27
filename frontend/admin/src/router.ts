@@ -76,7 +76,7 @@ ws.addEventListener('message', ({ data }) => {
     return;
   }
 
-  console.log('WS message:', msg);
+  // console.log('WS message:', msg);
 
   switch (msg.type) {
     // 1) Установка соединения, вы добавлены в комнату
