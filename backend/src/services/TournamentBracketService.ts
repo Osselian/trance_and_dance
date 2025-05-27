@@ -15,13 +15,17 @@ export class TournamentBracketService {
 		const roundOneMatches = 
 			await this.createFirstRoundMatches(tournamentId, participantIds);
 		
+		console.log(`ROUND 1 MATCHES CREATED: ${roundOneMatches.length}`);
+		
 		const totalRounds = Math.log2(playersCount);
+		console.log(`TOTAL ROUNDS: ${totalRounds}`);
 		let allMatches = [...roundOneMatches];
 
 		for (let round = 2; round <= totalRounds; round++) {
 			const matchesInRound = playersCount / Math.pow(2, round);
 			const roundMatches = await this
 				.createEmptyRoundMatches(tournamentId, round, matchesInRound);
+			console.log(`ROUND ${round} MATCHES CREATED: ${roundOneMatches.length}`);
 			allMatches = [...allMatches, ...roundMatches];
 		}
 
