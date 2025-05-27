@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply} from "fastify";
 import { AuthService } from "../../services/AuthService";
+import { UserService } from "../../services/UserService"; 
 
 export class AuthController{
 
@@ -10,11 +11,14 @@ export class AuthController{
 	//routes registration
 	public registerRoutes(): void {
 
-		this.fastify.post('/auth/register', this.register.bind(this));
-		this.fastify.post('/auth/login', this.login.bind(this));
-		this.fastify.post('/auth/refresh-token', this.refreshToken.bind(this));
-		this.fastify.post('/auth/logout', this.logout.bind(this));
-		this.fastify.post('/auth/google', this.googleLogin.bind(this))
+		this.fastify.post('/register', this.register.bind(this));
+		this.fastify.post('/login', this.login.bind(this));
+		this.fastify.post('/refresh-token', this.refreshToken.bind(this));
+		this.fastify.post('/google', this.googleLogin.bind(this))
+	}
+
+	public registerSecureRoutes(): void {
+		this.fastify.post('/logout', this.logout.bind(this));
 	}
 
 	//user registration
@@ -44,6 +48,8 @@ export class AuthController{
 			reply.status(400).send({message: 'Invalid credentials.'});
 			return;
 		}
+		console.log(`[AuthController] login success for ${user.id}`);
+		UserService.markUserOnline(user.id);
 
 		const accessToken = await this.generateToken(user.id, reply);
 		reply.send({ accessToken});
@@ -53,6 +59,8 @@ export class AuthController{
 		const { googleToken } = req.body as { googleToken: string};
 
 		const user = await this.authService.verifyGoogleTokenAndLogin(googleToken)
+		console.log(`[AuthController] login success for ${user.id}`);
+		UserService.markUserOnline(user.id);
 		const token = await this.generateToken(user.id, reply);
 		reply.send({ token});
 	}
@@ -79,6 +87,9 @@ export class AuthController{
 	}
 
 	async logout(req: FastifyRequest, reply: FastifyReply): Promise<void>{
+		const userId = (req as any).user.id as number;
+		console.log(`[UserController] logout invoked for ${userId}`);
+		UserService.markUserOffline(userId);
 		reply.clearCookie('refreshToken', {
 			path: '/',
 			httpOnly: true,

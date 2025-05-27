@@ -8,5 +8,3 @@ COPY certs/ /etc/grafana/certs/
 # COPY grafana.db /var/lib/grafana/grafana.db
 
 EXPOSE 3000
-
-

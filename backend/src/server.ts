@@ -25,9 +25,14 @@ const fastify = Fastify(
 	}
 ).withTypeProvider<TypeBoxTypeProvider>();
 
+fastify.addHook('onSend', async (request, reply, payload) => {
+  // позволим попапам Google закрывать себя
+  reply.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  return payload;
+});
 
 fastify.register(fastifyCors, {
-	origin: ['https://localhost:8080', 'https://localhost:8081'],
+	origin: true,
 	credentials: true,
 	methods: ['GET', 'POST', 'DELETE', 'OPTIONS', 'PUT']
 });
@@ -69,7 +74,7 @@ const mmService = new MatchmakingService();
 setInterval(() => mmService.processQueue().catch(console.error), 1000);
 
 const tournamentService = new TournamentService();
-const tournamentMatchService = new TournamentMatchService();
+// const tournamentMatchService = new TournamentMatchService();
 
 setInterval(async () => {
 	try {
@@ -83,15 +88,15 @@ setInterval(async () => {
 	}
 }, 60000); // every minute
 
-setInterval(async () => {
-	try {
-		const activeTournaments = await tournamentService.getActiveTournaments();
+// setInterval(async () => {
+// 	try {
+// 		const activeTournaments = await tournamentService.getActiveTournaments();
 
-		for (const tournament of activeTournaments) {
-			await tournamentMatchService.checkAndStartNextRoundMatches(tournament.id);
-			await tournamentMatchService.checkDisconnectedPlayers(tournament.id);
-		}
-	} catch (err) {
-		console.error('Error in tournament progress check:', err);
-	}
-}, 30000); // every 30 seconds
+// 		for (const tournament of activeTournaments) {
+// 			await tournamentMatchService.checkAndStartNextRoundMatches(tournament.id);
+// 			await tournamentMatchService.checkDisconnectedPlayers(tournament.id);
+// 		}
+// 	} catch (err) {
+// 		console.error('Error in tournament progress check:', err);
+// 	}
+// }, 30000); // every 30 seconds

@@ -1,16 +1,18 @@
 import { FastifyRequest } from 'fastify';
-import { GameService } from './GameService';
+import { GameHandler as GameHandler } from './GameHandler';
 import { MatchmakingService } from './MatchmakingService'
 import { WebSocket } from '@fastify/websocket';
 import { TournamentMatchService } from './TournamentMatchService';
 import { Match, TournamentMatch } from '@prisma/client';
+import { MatchRepository } from '../repositories/MatchRepository';
 
 type SocketWithUser = WebSocket & { userId: number; matchId: number};
 
 export class MatchWebSocketService {
 	private static instance: MatchWebSocketService;
 	private rooms: Map<number, Set<SocketWithUser>> = new Map();
-	private games: Map<number, GameService> = new Map();
+	private games: Map<number, GameHandler> = new Map();
+	private matchRepo = new MatchRepository();
 
 	private userConnections: Map<number, {
 		socketId: string,
@@ -60,93 +62,12 @@ export class MatchWebSocketService {
 			const typedSocket = this.fillRoom(socket, userId, matchId);
 
 			this.setupActivityTracking(typedSocket, userId);
-
 			this.socketEventsSubscribtion(typedSocket);
 			this.notifyOnConnection(typedSocket, userId, matchId, this.rooms.get(matchId)!);
 		}
 		catch {
 			(socket as WebSocket).close(1011, 'Unexpected error');
 		}
-	}
-
-	private setupActivityTracking(socket: SocketWithUser, userId: number) {
-		//update last activity time
-		const originalOnMessage = socket.onmessage;
-		// Use the correct MessageEvent type from 'ws'
-		const { MessageEvent } = require('ws');
-		socket.onmessage = (event: InstanceType<typeof MessageEvent>) => {
-			const connection = this.userConnections.get(userId);
-			if (connection)
-				connection.lastActivity = Date.now();
-
-			if (originalOnMessage) {
-				originalOnMessage.call(socket, event);
-			}
-		};
-
-		//set ping for activity tracking
-		const pingInterval = setInterval(() => {
-			try {
-				if (socket.readyState === socket.OPEN) {
-					socket.send(JSON.stringify({ type: 'ping' }));
-				} else {
-					clearInterval(pingInterval);
-				}
-			} catch (error) {
-				console.error('Error sending ping:', error);
-				clearInterval(pingInterval);
-			}
-		}, 30000); // 30 seconds
-
-		socket.addEventListener('close', () => {
-			clearInterval(pingInterval);
-			this.handleDisconnection(userId);
-		});
-	}	
-
-	private handleDisconnection(userId: number) {
-		const connection = this.userConnections.get(userId);
-		if (!connection) return;
-
-		console.log(`User ${userId} disconnected from match ${connection.matchId}`);
-
-		const disconnectionTimeout = setTimeout(async () => {
-			console.log(
-				`User ${userId} failed to reconnect in time, declairing technical loss`);
-			
-				try {
-					const match = await this.findMatchById(connection.matchId);
-					if (!match) return;
-
-					const tournamentMatch = await this
-						.findTournamentMatchById(connection.matchId);
-					if (!tournamentMatch) return;
-
-					const opponentId = match.player1Id === userId 
-						? match.player2Id
-						: match.player1Id;
-					
-					const tournamentMatchService = new TournamentMatchService();
-					await tournamentMatchService
-						.awardTechnicalWin(tournamentMatch.id, opponentId);
-
-					this.userConnections.delete(userId);
-				} catch (error) {
-					console.error('Error handling disconnection:', error);
-				}
-		}, this.RECONNECT_TIMEOUT);
-
-		connection.disconnectTimeout = disconnectionTimeout;
-	}
-
-	private async findMatchById(matchId: number): Promise<Match | null> {
-		const matchService = new MatchmakingService();
-		return matchService.findMatchById(matchId);
-	}
-
-	private async findTournamentMatchById(matchId: number): Promise<TournamentMatch | null> {
-		const tmService = new TournamentMatchService();
-		return tmService.getTournamentMatch(matchId);
 	}
 
 	private async getMatchId(
@@ -189,7 +110,7 @@ export class MatchWebSocketService {
 			this.rooms.set(matchId, room);
 
 			// Создаем новый экземпляр GameService для этой комнаты
-			const gameService = new GameService();
+			const gameService = new GameHandler();
 			this.games.set(matchId, gameService);
 		}
 		// Добавляем сокет в комнату
@@ -199,6 +120,127 @@ export class MatchWebSocketService {
 
 		return typedSocket;
 	}
+
+	private setupActivityTracking(socket: SocketWithUser, userId: number) {
+		//update last activity time
+		const originalOnMessage = socket.onmessage;
+		const { MessageEvent } = require('ws');
+		socket.onmessage = (event: InstanceType<typeof MessageEvent>) => {
+			const connection = this.userConnections.get(userId);
+			if (connection)
+				connection.lastActivity = Date.now();
+
+			if (originalOnMessage) {
+				originalOnMessage.call(socket, event);
+			}
+		};
+
+		//set ping for activity tracking
+		const pingInterval = setInterval(() => {
+			try {
+				if (socket.readyState === socket.OPEN) {
+					socket.send(JSON.stringify({ type: 'ping' }));
+				} else {
+					clearInterval(pingInterval);
+				}
+			} catch (error) {
+				console.error('Error sending ping:', error);
+				clearInterval(pingInterval);
+			}
+		}, 30000); // 30 seconds
+
+		(socket as any)._pingInterval = pingInterval;
+	}	
+
+	private socketEventsSubscribtion(socket: SocketWithUser) {
+		// Обработчик входящих сообщений
+		socket.on('message', (rawMessage: string) => {
+			this.handleIncomingMessage(socket, rawMessage);
+		});
+
+		// Обработка закрытия соединения
+		socket.on('close', () => {
+			if ((socket as any)._pingInterval) {
+				clearInterval((socket as any)._pingInterval);
+			}
+			this.handleDisconnection(socket.userId);
+			this.removeFromRoom(socket);
+		});
+	}
+
+	private handleDisconnection(userId: number) {
+		const connection = this.userConnections.get(userId);
+		if (!connection) return;
+
+		console.log(`User ${userId} disconnected from match ${connection.matchId}`);
+
+		const disconnectionTimeout = setTimeout(async () => {
+			console.log(
+				`User ${userId} failed to reconnect in time, 
+				declairing technical loss`);
+				try {
+					const game = this.games.get(connection.matchId);
+					game?.stopGame();
+
+					const match = await this.findMatchById(connection.matchId);
+					if (!match) return;
+
+					const winnerId = match.player1Id === userId 
+						? match.player2Id
+						: match.player1Id;
+
+					game?.setWinnerId(winnerId);
+
+					const sockets = this.rooms.get(connection.matchId);
+					sockets?.forEach((s) => {
+						this.removeFromRoom(s);
+					});
+
+					this.userConnections.delete(userId);
+				} catch (error) {
+					console.error('Error handling disconnection:', error);
+				}
+		}, this.RECONNECT_TIMEOUT);
+
+		connection.disconnectTimeout = disconnectionTimeout;
+	}
+
+	private removeFromRoom(socket: SocketWithUser) {
+		const matchId = socket.matchId;
+		const room = this.rooms.get(socket.matchId);
+		if (room) {
+			room.delete(socket);
+			const game = this.games.get(matchId);
+			if (room.size === 0 && game?.getIsGameCompleted) {
+				this.endGame(socket, game);
+			} else {
+				//if one player left
+				if (room.size === 1) {
+					const remainingPlayer = Array.from(room)[0];
+					remainingPlayer.send(JSON.stringify({
+						type: 'playerDisconnected',
+						message: 'Your opponent has disconnected. Waiting for reconnection...',
+					}));
+				}
+			}
+		}
+	}
+
+	private endGame(socket: SocketWithUser, game: GameHandler) {
+		this.rooms.delete(socket.matchId);
+		this.games.delete(socket.matchId);
+		this.matchRepo.completeMatch(socket.matchId, game.getWinnerId()!);
+	}
+
+	private async findMatchById(matchId: number): Promise<Match | null> {
+		const matchService = new MatchmakingService();
+		return matchService.findMatchById(matchId);
+	}
+
+	// private async findTournamentMatchById(matchId: number): Promise<TournamentMatch | null> {
+	// 	const tmService = new TournamentMatchService();
+	// 	return tmService.getTournamentMatch(matchId);
+	// }
 
 	private notifyOnConnection(
 		typedSocket: SocketWithUser,
@@ -228,18 +270,6 @@ export class MatchWebSocketService {
 
 	}
 
-	private socketEventsSubscribtion(socket: SocketWithUser) {
-		// Обработчик входящих сообщений
-		socket.on('message', (rawMessage: string) => {
-			this.handleIncomingMessage(socket, rawMessage);
-		});
-
-		// Обработка закрытия соединения
-		socket.on('close', () => {
-			this.removeFromRoom(socket);
-		});
-	}
-
 	private handleIncomingMessage(socket: SocketWithUser, rawMessage: string) {
 		let msg: any;
 		try {
@@ -264,32 +294,6 @@ export class MatchWebSocketService {
 				message: 'Invalid message format'
 			}));
 			return;
-		}
-	}
-
-	private removeFromRoom(socket: SocketWithUser) {
-		const matchId = socket.matchId;
-		const room = this.rooms.get(socket.matchId);
-		if (room) {
-			room.delete(socket);
-			if (room.size === 0) {
-				this.rooms.delete(socket.matchId);
-
-				const game = this.games.get(matchId);
-				if (game) {
-					game.stopGame();
-					this.games.delete(socket.matchId);
-				}
-			} else {
-				//if one player left
-				if (room.size === 1) {
-					const remainingPlayer = Array.from(room)[0];
-					remainingPlayer.send(JSON.stringify({
-						type: 'playerDisconnected',
-						message: 'Your opponent has disconnected. Waiting for reconnection...',
-					}));
-				}
-			}
 		}
 	}
 

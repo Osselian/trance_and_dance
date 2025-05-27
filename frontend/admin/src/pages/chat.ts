@@ -54,9 +54,9 @@ export async function ChatPage(): Promise<HTMLElement> {
 
   const actions = document.createElement('div');
   actions.className = 'space-x-2';
-  const blockBtn = document.createElement('button'); blockBtn.textContent = 'Заблокировать';
-  const pongBtn = document.createElement('button'); pongBtn.textContent = 'Пригласить в Pong';
-  const profileBtn = document.createElement('button'); profileBtn.textContent = 'Профиль';
+  const blockBtn = document.createElement('button'); blockBtn.textContent = 'Block';
+  const pongBtn = document.createElement('button'); pongBtn.textContent = 'Invite to Pong';
+  const profileBtn = document.createElement('button'); profileBtn.textContent = 'Profile';
   actions.append(blockBtn, pongBtn, profileBtn);
 
   header.append(userInfo, actions);
@@ -70,9 +70,9 @@ export async function ChatPage(): Promise<HTMLElement> {
   const inputWrapper = document.createElement('div');
   inputWrapper.className = 'p-4 border-t flex space-x-2 hidden';
   const messageInput = document.createElement('input');
-  messageInput.type = 'text'; messageInput.placeholder = 'Напишите сообщение...';
+  messageInput.type = 'text'; messageInput.placeholder = 'Write a message...';
   messageInput.className = 'flex-1 p-2 border rounded';
-  const sendBtn = document.createElement('button'); sendBtn.textContent = 'Отправить';
+  const sendBtn = document.createElement('button'); sendBtn.textContent = 'Send';
   inputWrapper.append(messageInput, sendBtn);
   main.append(inputWrapper);
 
@@ -186,7 +186,7 @@ export async function ChatPage(): Promise<HTMLElement> {
     catch (err: any) {
       // если это «заблокировали» — показываем дружелюбный алерт
       if (err.message.includes("you've been blocked")) {
-        alert('Нельзя отправить сообщение: этот пользователь вас заблокировал.');
+        alert('Message cannot be sent: this user has blocked you.');
         // и отключаем ввод
         messageInput.disabled = true;
         sendBtn.disabled = true;
@@ -194,7 +194,7 @@ export async function ChatPage(): Promise<HTMLElement> {
       }
       // иначе пробрасываем дальше (или показываем общее сообщение)
       console.error(err);
-      alert('Ошибка отправки: ' + err.message);
+      alert('Send error: ' + err.message);
     }
   }
 
@@ -203,7 +203,7 @@ export async function ChatPage(): Promise<HTMLElement> {
     if (!selectedUserId) return;
     const list = await ChatAPI.listBlocked();
     isBlocked = list.includes(selectedUserId);
-    blockBtn.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
+    blockBtn.textContent = isBlocked ? 'Unblock' : 'Block';
     blockBtn.disabled = false;
   }
 
@@ -223,7 +223,7 @@ export async function ChatPage(): Promise<HTMLElement> {
 
       // после успеха меняем флаг и подпись
       isBlocked = !isBlocked;
-      blockBtn.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
+      blockBtn.textContent = isBlocked ? 'Unblock' : 'Block';
     } catch (err) {
       console.error('Block/unblock failed', err);
       // здесь можно вывести уведомление пользователю
