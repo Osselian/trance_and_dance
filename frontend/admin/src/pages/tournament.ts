@@ -227,18 +227,14 @@ async function renderBracket(id: string) {
           m.match.status === 'PENDING' &&
           (m.match.player1Id === userId || m.match.player2Id === userId)
         ) {
-          console.log('Match object:', m);
           const playBtn = document.createElement('button');
           playBtn.textContent = 'Играть онлайн';
           playBtn.className = 'mt-2 px-2 py-1 bg-blue-600 rounded hover:bg-blue-500 text-sm';
           playBtn.addEventListener('click', () => {
-            console.log('starting m.matchId=', m.match.matchId);
-            console.log('starting matchId=', m.matchId);
             location.hash = `#/play/quick/${m.matchId}`;
           });
           card.appendChild(playBtn);
         }
-
         col.appendChild(card);
       });
 

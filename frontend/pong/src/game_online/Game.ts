@@ -262,7 +262,7 @@ export class Game {
       } else {
         win_or_lose = 'lost';
       }
-      this.ctx.fillText(`You (ID ${this.settings.playerNumber}) ${win_or_lose}! Press SPACE to play again`,
+      this.ctx.fillText(`You (ID ${this.settings.playerNumber}) ${win_or_lose}!`,
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }

@@ -85,6 +85,8 @@ export async function ChatPage(): Promise<HTMLElement> {
 
   // Добавление сообщения в окно
   function appendMessage(m: Message) {
+
+    
     const msgEl = document.createElement('div');
     msgEl.className = m.senderId === currentUserId ? 'text-right' : 'text-left';
     msgEl.textContent = m.content;
@@ -235,7 +237,14 @@ export async function ChatPage(): Promise<HTMLElement> {
   // Приглашение в Pong
   async function invitePong() {
     if (!selectedUserId) return;
+    // 1) создаём матч и получаем matchId
     const { matchId } = await MatchAPI.createMatchInvite(selectedUserId);
+    // 2) сообщаем игроку в чат о приглашении
+    await ChatAPI.sendMessage(
+      selectedUserId,
+      JSON.stringify({ type: 'pong-invite', matchId })
+    );
+    // 3) сразу переводим инициатора в лобби ожидания
     router.navigate(`#/play/quick/${matchId}`);
   }
 
