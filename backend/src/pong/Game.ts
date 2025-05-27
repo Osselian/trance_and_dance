@@ -74,11 +74,11 @@ export class Game {
 		this.isWaitingForBallSpawn = 3;
 	}		
 
-	public handlePlayerInput(direction: string, playerId: number): void {
+	public handlePlayerInput(direction: string, playerNumber: number): void {
 		if (this.gameState !== 'PLAYING') return;
 
 		// const direction = data.direction;
-		const paddle = playerId === 1 ? this.player1Paddle : this.player2Paddle;
+		const paddle = playerNumber === 1 ? this.player1Paddle : this.player2Paddle;
 
 		if (direction === 'up') {
 			paddle.move('up', 600);
