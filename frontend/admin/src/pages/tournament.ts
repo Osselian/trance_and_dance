@@ -119,12 +119,12 @@ export async function initTournament(): Promise<void> {
     // Заголовок
     nameDisplay.textContent = tour.name;
     idDisplay.textContent   = String(tour.id);
-
+  console.log('PARTICIPANTS RAW:', participants);
     const ul = document.getElementById('participants-ul')!;
     ul.innerHTML = '';  // очистить старый список
     participants.forEach(p => {
       const li = document.createElement('li');
-      li.textContent = p.tournamentName || `User #${p.userId}`;
+      li.textContent = p.user.username;
       ul.appendChild(li);
     });
 
