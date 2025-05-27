@@ -26,9 +26,10 @@ export const tournamentView = `
       </h1>
       <p>ID турнира: <span id="tournament-id-display"></span></p>
     </div>
-    <div id="participants-list" class="mt-6">
+    <div id="participants-list"
+        class="mt-6 bg-gray-800 p-4 rounded-lg text-white">
       <h2 class="text-xl font-semibold mb-2">Участники</h2>
-      <ul id="participants-ul" class="list-disc list-inside text-white"></ul>
+      <ul id="participants-ul" class="list-disc list-inside"></ul>
     </div>
   </div>
 
@@ -47,7 +48,7 @@ export const tournamentView = `
   </table>
 
   <!-- Контейнер для бракета -->
-  <div id="bracket-container" class="mt-8 p-4 bg-gray-800 text-white rounded-lg">
+  <div id="bracket-container" class="mt-8 p-4 bg-gray-800 text-white rounded-lg max-h-[60vh] overflow-auto whitespace-nowrap">
     <!-- сетка появится здесь -->
   </div>
 
@@ -64,6 +65,8 @@ export const tournamentView = `
   </div>
 </section>
 `;
+
+let bracketPoller: number | null = null;
 
 export async function initTournament(): Promise<void> {
   // 1) Контекст
@@ -162,6 +165,7 @@ export async function initTournament(): Promise<void> {
 
   // 6) Рендер бракета
   async function renderBracket(id: string) {
+    bracketCt.innerHTML = '';
     const res = await fetch(`${BASE}/tournament/${id}/bracket`, { headers });
     if (!res.ok) {
       bracketCt.textContent = 'Нет сетки';
@@ -177,13 +181,13 @@ export async function initTournament(): Promise<void> {
     });
 
     // Отрисовка
-    bracketCt.innerHTML = '';
     const wrapper = document.createElement('div');
     wrapper.className = 'flex gap-4';
     Array.from(rounds.entries())
       .sort(([a], [b]) => a - b)
       .forEach(([round, ms]) => {
         const col = document.createElement('div');
+        col.className = 'min-w-[160px]';
         const h3 = document.createElement('h3');
         h3.textContent = `Раунд ${round}`;
         h3.className = 'text-lg font-semibold mb-2';
@@ -214,14 +218,18 @@ export async function initTournament(): Promise<void> {
     await renderBracket(tourId);
 
     // 8) Периодический опрос
-    setInterval(async () => {
-      await renderTournament(tourId!);
-      await renderBracket(tourId!);
-    }, 15000);
-  } else {
-    createBlock.classList.remove('hidden');
-    infoBlock.classList.add('hidden');
-  }
+  if (bracketPoller) {
+        clearInterval(bracketPoller);
+      }
+      bracketPoller = window.setInterval(async () => {
+        await renderTournament(tourId!);
+        await renderBracket(tourId!);
+      }, 15_000);
+
+    } else {
+      createBlock.classList.remove('hidden');
+      infoBlock.classList.add('hidden');
+    }
 
   // 9) Создать турнир
   createBtn.addEventListener('click', async () => {
@@ -259,7 +267,10 @@ export async function initTournament(): Promise<void> {
       const err = await res.json();
       return alert('Не удалось присоединиться: ' + err.message);
     }
-    await renderTournament(tourId!);
+    window.location.hash = `#/tournament?id=${tourId}`;
+  // и перерисовываем
+    await renderTournament(tourId);
+    await renderBracket(tourId);
   });
 
   // 11) Начать турнир

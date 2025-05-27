@@ -16,12 +16,12 @@ export class TournamentController {
 		this.fastify.delete('/:id', this.removeTournament.bind(this));
 		// this.fastify.get('/:id/status', this.checkTournamentStatus.bind(this));
 		this.fastify.post('/:id/register', this.registerParticipant.bind(this));
-		this.fastify.post('/:id/bracket', this.bracket.bind(this));
 	}
 
 	public registerRoutes(): void {
 		this.fastify.get('/:id', this.getTournament.bind(this));
 		this.fastify.get('', this.listTournament.bind(this));
+		this.fastify.get('/:id/bracket', this.bracket.bind(this));
 	}
 
 	private async createTournament(req: FastifyRequest, reply: FastifyReply) {
