@@ -34,8 +34,8 @@ export const GameMode = {
 export type GameMode = typeof GameMode[keyof typeof GameMode]
 
 export interface GameScore {
-  player: number; // left paddle
-  computer: number; // right paddle (may be a player or a computer)
+  leftPlayer: number; // left paddle
+  rightPlayer: number; // right paddle (may be a player or a computer)
 }
 
 export interface GamesStateDto {

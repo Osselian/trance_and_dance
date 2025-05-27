@@ -14,53 +14,53 @@ export class Game {
   private rightPaddle: Paddle;
   private ball: Ball;
   private score: Score;
+  private WinnerId: number = -1; 
   private gameState: GameState;
-  private gameMode: GameMode | null = null;
-  private gameMessage: HTMLElement;
-  private animationFrameId: number | null = null;
+  // private gameMode: GameMode | null = null;
+  // private gameMessage: HTMLElement;
+  // private animationFrameId: number | null = null;
   private lastScoreTime: number = 0;
-  private readonly SCORE_DELAY = 1000; // 1 second delay
+  // private readonly SCORE_DELAY = 1000; // 1 second delay
   private isWaitingForBallSpawn: number = -1;
   private isGameStartCountdown: boolean = false;
-  private lastFrameTime: number = 0;
-  private targetPaddlePositions: { player: number; computer: number } | null = null;
+  // private lastFrameTime: number = 0;
+  // private targetPaddlePositions: { left: number; right: number } | null = null;
 
   constructor(mode: GameMode, ws: WebSocket, settings: any) {
     this.ws = ws;
     this.settings = settings; // settings come from server in a 'connection' message
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-    this.gameMessage = document.getElementById('gameMessage') as HTMLElement;
-    this.lastFrameTime = performance.now();
+    // this.gameMessage = document.getElementById('gameMessage') as HTMLElement;
+    // this.lastFrameTime = performance.now();
 
     // Set canvas size
     this.canvas.width = 800;
     this.canvas.height = 600;
 
     // Initialize game objects
-    this.leftPaddle = new Paddle(50, false);
-    this.rightPaddle = new Paddle(this.canvas.width - 60, false);
-    this.ball = new Ball();
-    this.score = new Score();
-    this.gameMode = mode ?? null;
-    this.gameState = mode != null
-      ? GameState.START
-      : GameState.MODE_SELECTION;
-
-  }
-
-  public start(): void {
-    // Set up WebSocket message handler
-    console.log('Connected to game server');
-    // Set the correct paddle as player's paddle based on playerNumber
-    if (this.settings.playerNumber === 1) {
+    if (this.settings.playerNumber % 2 === 1) {
       this.leftPaddle = new Paddle(50, true);
       this.rightPaddle = new Paddle(this.canvas.width - 60, false);
     } else {
       this.leftPaddle = new Paddle(50, false);
       this.rightPaddle = new Paddle(this.canvas.width - 60, true);
     }
+    this.ball = new Ball();
+    this.score = new Score();
+    // this.gameMode = mode ?? null;
+    this.gameState = mode != null
+      ? GameState.START
+      : GameState.MODE_SELECTION;
 
+  }
+
+  // all handling of websocket events and game logic is here
+  public start(): void {
+    // Set up WebSocket message handler
+    console.log('Connected to game server, playerID:', this.settings.playerNumber);
+    // Set the correct paddle as player's paddle based on playerNumber
+    
     this.subscribeOnWsEvents();
 
 
@@ -115,18 +115,7 @@ export class Game {
 	});
 
       this.ws.send(JSON.stringify({ type: 'ready' }));
-    // Start the game loop
-    // const gameLoop = (timestamp: number) => {
-    //   const deltaTime = timestamp - this.lastFrameTime;
-    //   this.lastFrameTime = timestamp;
 
-    //   this.update(deltaTime);
-    //   this.draw();
-
-    //   this.animationFrameId = requestAnimationFrame(gameLoop);
-    // };
-
-    // this.animationFrameId = requestAnimationFrame(gameLoop);
   }
 
   private subscribeOnWsEvents(){
@@ -163,10 +152,15 @@ export class Game {
           this.lastScoreTime = performance.now();
           break;          
         case 'gameStop':
-          this.gameState = GameState.GAME_OVER;
+          // this.gameState = GameState.GAME_OVER;
+          console.log('gameStop yall!\n');
           break;          
         case 'gameState':
           // Update game state with received data
+          if (message.hasWinner) {
+            this.WinnerId = message.winnerId;
+            this.gameState = GameState.GAME_OVER;
+          }
           if (message.ballPos) {
             this.ball.setPosition(message.ballPos.x, message.ballPos.y);
           }
@@ -220,23 +214,6 @@ export class Game {
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
 
-      // Show countdown numbers and GO! with different colors
-      // if (timeElapsed < 250) {
-      //   this.ctx.fillStyle = '#FF0000'; // Red
-      //   this.ctx.fillText('3', this.canvas.width / 2, this.canvas.height / 2);
-      // } else if (timeElapsed < 500) {
-      //   this.ctx.fillStyle = '#FFA500'; // Orange
-      //   this.ctx.fillText('2', this.canvas.width / 2, this.canvas.height / 2);
-      // } else if (timeElapsed < 750) {
-      //   this.ctx.fillStyle = '#FFFF00'; // Yellow
-      //   this.ctx.fillText('1', this.canvas.width / 2, this.canvas.height / 2);
-      // } else if (timeElapsed < 1000) {
-      //   this.ctx.fillStyle = '#00FF00'; // Green
-      //   this.ctx.fillText('GO!', this.canvas.width / 2, this.canvas.height / 2);
-      // } else if (this.isGameStartCountdown) {
-      //   this.isGameStartCountdown = false;
-      //   this.ball.show();
-      // }
       switch (this.isWaitingForBallSpawn) {
         case 4:
           this.ctx.fillStyle = '#FF0000'; // Red
@@ -278,10 +255,15 @@ export class Game {
     } else if (this.gameState === GameState.GAME_OVER) {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
-      const winner = this.score.getWinner();
-      this.ctx.fillText(`${winner === 'player' ? 'Left Paddle' : 'Right paddle'} won! Press SPACE to play again`,
+      
+      let win_or_lose = '';
+      if (this.WinnerId !== -1 && this.WinnerId === this.settings.playerNumber) {
+        win_or_lose = 'won';
+      } else {
+        win_or_lose = 'lost';
+      }
+      this.ctx.fillText(`You (ID ${this.settings.playerNumber}) ${win_or_lose}! Press SPACE to play again`,
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }
-
 }
