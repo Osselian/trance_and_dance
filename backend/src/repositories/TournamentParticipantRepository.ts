@@ -13,7 +13,15 @@ export class TournamentParticipantRepository {
 
 	async findByTournament( tournamentId: number): Promise<TournamentParticipant[]> {
 		return prisma.tournamentParticipant.findMany({
-			where: { tournamentId}
+			where: { tournamentId},
+			include: {
+				user: {
+					select: {
+						id: true,
+						username: true
+					}
+				}
+			}
 		});
 	}
 
