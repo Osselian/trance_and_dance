@@ -47,9 +47,9 @@ export class TournamentController {
 	}
 
 	private async registerParticipant(req: FastifyRequest, reply: FastifyReply) {
-		const tournamentId = Number((req.params as any).id);
-		const userId = (req.user as any).id;
 		try {
+			const tournamentId = Number((req.params as any).id);
+			const userId = (req.user as any).id;
 			const dto = req.body as RegisterParticipantDto;
 			dto.tournamentName ??= (req.user as any).username;
 			const part = await this.tournamentService
@@ -62,22 +62,32 @@ export class TournamentController {
 	}
 
 	private async getTournament(req: FastifyRequest, reply: FastifyReply) {
+		try {
 		const id = Number((req.params as any).id);
 		const tournament = await this.tournamentService.getTournament(id);
 		if (!tournament)
 			return reply.status(400).send({ message: 'Tournament not found'});
 		reply.send(tournament);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error';
+			reply.status(400).send({ message: msg});
+		}
 	}
 
 	private async listTournament(req: FastifyRequest, reply: FastifyReply) {
+		try {
 		const tours = await this.tournamentService.listTournaments();
 		reply.send(tours);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error';
+			reply.status(400).send({ message: msg});
+		}
 	}
 
 	private async updateTournament(req: FastifyRequest, reply: FastifyReply) {
-		const id = Number((req.params as any).id);
-		const dto = parseTournamentDto(req.body as any);
 		try {
+			const id = Number((req.params as any).id);
+			const dto = parseTournamentDto(req.body as any);
 			const tour = await this.tournamentService.updateTournament(id, dto);
 			reply.send(tour);
 		} catch (err){
@@ -87,8 +97,8 @@ export class TournamentController {
 	}
 
 	private async removeTournament(req: FastifyRequest, reply: FastifyReply) {
-		const id = Number((req.params as any).id);
 		try {
+			const id = Number((req.params as any).id);
 			const tour = await this.tournamentService.removeTournament(id);
 			reply.send(tour);
 		}
@@ -99,9 +109,8 @@ export class TournamentController {
 	}
 
 	private async bracket(req: FastifyRequest, reply: FastifyReply) {
-		const tournamentId = Number((req.params as any).id);
-
 		try {
+			const tournamentId = Number((req.params as any).id);
 			const bracket = await this.tournamentService.getBracket(tournamentId);
 			reply.send(bracket);
 		} catch (err) {

@@ -18,9 +18,9 @@ export class TournamentParticipantController {
 	}
 
 	private async unregister(req: FastifyRequest, reply: FastifyReply) {
-		const tournamentId = Number((req.params as any).id);
-		const userId = (req.user as any).id;
 		try {
+			const tournamentId = Number((req.params as any).id);
+			const userId = (req.user as any).id;
 			const part = await this.participantService.unregister(tournamentId, userId);
 			reply.send(part);
 		} catch (err) {
@@ -30,8 +30,14 @@ export class TournamentParticipantController {
 	}
 
 	private async list(req: FastifyRequest, reply: FastifyReply) {
+		try {
 		const tournamentId = Number((req.params as any).id);
 		const list = await this.participantService.listParticipants(tournamentId);
 		reply.send(list);
+		}
+		catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error';
+			reply.status(400).send({ message: msg });
+		}
 	}
 }

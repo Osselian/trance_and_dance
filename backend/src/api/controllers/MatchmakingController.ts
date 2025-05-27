@@ -19,8 +19,8 @@ export class MatchmakingController {
 	}
 
 	private async joinQueue(req: FastifyRequest, reply: FastifyReply) {
-		const { id: userId} = req.user as any;
 		try {
+			const { id: userId} = req.user as any;
 			await this.mmService.joinQueue(userId);
 			reply.send({ message: 'Joined matchmaking queue'});
 		}
@@ -31,8 +31,8 @@ export class MatchmakingController {
 	}
 
 	private async leaveQueue(req: FastifyRequest, reply: FastifyReply) {
-		const { id: userId} = req.user as any;
 		try {
+			const { id: userId} = req.user as any;
 			await this.mmService.leaveQueue(userId);
 			reply.send({ message: 'Left matchmaking queue'});
 		}
@@ -54,9 +54,8 @@ export class MatchmakingController {
 	}
 
 	private async checkForPendingMatch(req: FastifyRequest, reply: FastifyReply) {
-		console.log('checkForPendingMatch hit for user', (req.user as any)?.id);
-		const user = req.user as any
 		try {
+			const user = req.user as any
 			const match = await this.mmService.findMatchForPlayer(user.id);
 			if (!match)
 				reply.send({found: false});

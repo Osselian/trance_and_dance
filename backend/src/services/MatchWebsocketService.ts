@@ -229,7 +229,12 @@ export class MatchWebSocketService {
 	private endGame(socket: SocketWithUser, game: GameHandler) {
 		this.rooms.delete(socket.matchId);
 		this.games.delete(socket.matchId);
-		this.matchRepo.completeMatch(socket.matchId, game.getWinnerId()!);
+		try {
+			this.matchRepo.completeMatch(socket.matchId, game.getWinnerId()!);
+		}
+		catch{
+			console.log("CAN'T COMPLETE MATCH");
+		}
 	}
 
 	private async findMatchById(matchId: number): Promise<Match | null> {

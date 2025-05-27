@@ -13,17 +13,22 @@ export class MatchController {
 
 
 	private async getMatch(req: FastifyRequest, reply:FastifyReply) {
-		const matchId = Number((req.params as any).id);
-		const match = await this.matchRepo.findById(matchId);
-		if (!match)
-			return reply.status(404).send({ message: 'Match not found'});
-		reply.send(match);
+		try {
+			const matchId = Number((req.params as any).id);
+			const match = await this.matchRepo.findById(matchId);
+			if (!match)
+				return reply.status(404).send({ message: 'Match not found' });
+			reply.send(match);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error';
+			reply.status(400).send({ message: msg });
+		}
 	}
 
 	private async completeMatch(req: FastifyRequest, reply: FastifyReply) {
-		const matchId = Number((req.params as any).id);
-		const { result: winnerId} =  req.body as { result: number};
 		try {
+			const matchId = Number((req.params as any).id);
+			const { result: winnerId } = req.body as { result: number };
 			const match = await this.matchRepo.completeMatch(matchId, winnerId);
 			reply.send(match);
 		} catch (err) {
