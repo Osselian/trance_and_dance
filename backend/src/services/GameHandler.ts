@@ -106,21 +106,6 @@ export class GameHandler {
 		}, 17);
 	}
 
-	public pauseGame(): void {
-		this.game.pause();
-		if (this.gameInterval) {
-			clearInterval(this.gameInterval);
-			this.gameInterval = null;
-		}
-	}
-
-	public resumeGame(): void {
-		this.startGame();
-	}
-
-	public resetGame(): void {
-		this.game.reset();
-	}
 //под вопросом
 	public stopGame(): void {
 		this.isGameCompleted = true;
@@ -135,11 +120,9 @@ export class GameHandler {
 		};
 		this.clients.forEach((client) => {
 			client.send(JSON.stringify(gameStopMessage));
-		}
-		);
+		});
 		this.playersReady.clear();
 	}
-
 
 	private broadcastGameState(state:GamesStateDto): void {
 		try {
@@ -157,4 +140,21 @@ export class GameHandler {
 			console.error("Error broadcasting game state:", error);
 		}
 	}
+
+	public pauseGame(): void {
+		this.game.pause();
+		if (this.gameInterval) {
+			clearInterval(this.gameInterval);
+			this.gameInterval = null;
+		}
+	}
+
+	public resumeGame(): void {
+		this.startGame();
+	}
+
+	public resetGame(): void {
+		this.game.reset();
+	}
+
 }
