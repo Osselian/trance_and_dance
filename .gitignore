@@ -3,6 +3,7 @@ frontend/admin/certs/
 frontend/pong/certs/
 devops/monitoring/grafana/certs/
 devops/monitoring/prometheus/certs/
+devops/elk/certs
 *.pem
 *.key
 *.crt
