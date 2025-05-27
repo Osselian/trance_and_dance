@@ -175,6 +175,10 @@ export class TournamentService {
 			tournament.name
 		);
 	}
+
+	async getBracket(tournamentId: number): Promise<TournamentMatch[]> {
+			return this.tmmRepo.findAllByTournament(tournamentId);
+	}
 	// async checkTournamentStatus(tournamentId: number): 
 	// 	Promise<{isReady: boolean, playersCount: number, requiredPlayers: number}> 
 	// {

@@ -16,6 +16,7 @@ export class TournamentController {
 		this.fastify.delete('/:id', this.removeTournament.bind(this));
 		// this.fastify.get('/:id/status', this.checkTournamentStatus.bind(this));
 		this.fastify.post('/:id/register', this.registerParticipant.bind(this));
+		this.fastify.post('/:id/bracket', this.bracket.bind(this));
 	}
 
 	public registerRoutes(): void {
@@ -92,6 +93,18 @@ export class TournamentController {
 			reply.send(tour);
 		}
 		catch (err){
+			const msg = err instanceof Error ? err.message : 'Error';
+			reply.status(400).send({ message: msg});
+		}
+	}
+
+	private async bracket(req: FastifyRequest, reply: FastifyReply) {
+		const tournamentId = Number((req.params as any).id);
+
+		try {
+			const bracket = await this.tournamentService.getBracket(tournamentId);
+			reply.send(bracket);
+		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error';
 			reply.status(400).send({ message: msg});
 		}

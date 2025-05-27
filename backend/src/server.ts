@@ -86,7 +86,7 @@ setInterval(async () => {
 	} catch (err) {
 		console.error('Error checking tournaments:', err);
 	}
-}, 60000); // every minute
+}, 5000); // every minute
 
 // setInterval(async () => {
 // 	try {
