@@ -206,7 +206,7 @@ function renderPongInvite(matchId: number, fromUserId: number) {
     shownInvites.clear();
     showChatUI();
     await loadMessages();
-    pollTimer = window.setInterval(loadMessages, 3000);
+    pollTimer = window.setInterval(loadMessages, 1000);
   }
 
   // Загрузка сообщений

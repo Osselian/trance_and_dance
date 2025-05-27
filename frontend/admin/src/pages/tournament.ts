@@ -58,6 +58,10 @@ export const tournamentView = `
             class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded hidden">
       Начать турнир
     </button>
+    <input id="participant-name" 
+       type="text" 
+       placeholder="Как мы вас будем называть в турнире?" 
+       class="..." />
     <button id="join-tournament-btn"
             class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded hidden">
       Присоединиться к турниру
@@ -294,8 +298,12 @@ async function renderBracket(id: string) {
   // 10) Присоединиться
   joinBtn.addEventListener('click', async () => {
     if (!tourId) return;
+     const raw = (document.getElementById('participant-name') as HTMLInputElement)
+                .value
+                .trim();
+    const tournamentName = raw.length > 0 ? raw : user.username;
     const res = await fetch(`${BASE}/tournament/${tourId}/register`, {
-      method: 'POST', headers, body: JSON.stringify({})
+      method: 'POST', headers, body: JSON.stringify({tournamentName})
     });
     if (!res.ok) {
       const err = await res.json();
