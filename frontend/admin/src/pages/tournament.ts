@@ -154,9 +154,10 @@ export async function initTournament(): Promise<void> {
     }
 
     // Кнопка «Начать турнир»
-    const isOwner = (tour as any).creatorId === userId;
+    const isOwner = participants.length > 0 && participants[0].userId === userId;
     const full    = participants.length === tour.requiredPlayers;
-    if (tour.status === 'REGISTRATION' && isOwner && full) {
+    const pending = tour.match?.status === 'PENDING';
+    if (pending && isOwner && full) {
       startBtn.classList.remove('hidden');
     } else {
       startBtn.classList.add('hidden');
@@ -173,6 +174,16 @@ export async function initTournament(): Promise<void> {
     }
     const matches: any[] = await res.json();
 
+    const partsRes = await fetch(
+      `${BASE}/tournamentParticipant/${id}/participants`,
+      { headers }
+    );
+
+  const participants: any[] = partsRes.ok ? await partsRes.json() : [];
+  const nameMap = new Map<number,string>();
+  participants.forEach(p => {
+    nameMap.set(p.userId, p.user.username);
+  });
     // Группировка по раундам
     const rounds = new Map<number, any[]>();
     matches.forEach(m => {
@@ -193,13 +204,15 @@ export async function initTournament(): Promise<void> {
         h3.className = 'text-lg font-semibold mb-2';
         col.appendChild(h3);
         ms.forEach(m => {
+          const p1 = nameMap.get(m.match.player1Id) ?? '—';
+          const p2 = nameMap.get(m.match.player2Id) ?? '—';
           const card = document.createElement('div');
           card.className = 'mb-2 p-2 bg-gray-700 rounded';
           card.innerHTML = `
             <div class="flex justify-between">
-              <span>${m.match.p1Name || '—'}</span>
+              <span>${p1}</span>
               <span>vs</span>
-              <span>${m.match.p2Name || '—'}</span>
+              <span>${p2}</span>
             </div>
             <div class="text-sm text-gray-400">#${m.bracketPos}</div>
           `;
@@ -269,22 +282,32 @@ export async function initTournament(): Promise<void> {
     }
     window.location.hash = `#/tournament?id=${tourId}`;
   // и перерисовываем
-    await renderTournament(tourId);
-    await renderBracket(tourId);
+    window.location.reload();
+    // await renderTournament(tourId);
+    // await renderBracket(tourId);
   });
 
   // 11) Начать турнир
   startBtn.addEventListener('click', async () => {
     if (!tourId) return;
-    const res = await fetch(`${BASE}/tournament/${tourId}/start`, {
-      method: 'POST', headers
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      return alert('Ошибка старта: ' + err.message);
+    try {
+      const res = await fetch(`${BASE}/tournament/${tourId}/start`, {
+        method: 'POST',
+        headers,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        return alert('Ошибка старта: ' + err.message);
+      }
+      // Предположим, что сервер в ответ присылает { matchId: number }
+      const { matchId } = await res.json();
+
+      // Перенаправляем на роут, где поднимается WebSocket
+      location.hash = `#/play/quick/${matchId}`;
+    } catch (e) {
+      console.error(e);
+      alert('Не удалось запустить игру');
     }
-    await renderTournament(tourId!);
-    await renderBracket(tourId!);
   });
 }
 
