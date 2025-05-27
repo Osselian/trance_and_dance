@@ -160,6 +160,7 @@ export class Game {
           if (message.hasWinner) {
             this.WinnerId = message.winnerId;
             this.gameState = GameState.GAME_OVER;
+			this.ws.close(); // Close the WebSocket connection after game over
           }
           if (message.ballPos) {
             this.ball.setPosition(message.ballPos.x, message.ballPos.y);
