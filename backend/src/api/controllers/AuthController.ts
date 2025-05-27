@@ -23,10 +23,8 @@ export class AuthController{
 
 	//user registration
 	public async register(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-		
-		const {email, username, password} = request.body as any;
-		
 		try {
+			const {email, username, password} = request.body as any;
 			const user = await this.authService.register(email, username, password);
 			//token generation
 			const accessToken = await this.generateToken(user.id, reply);
@@ -40,22 +38,27 @@ export class AuthController{
 
 	//user auth
 	async login (request: FastifyRequest, reply: FastifyReply): Promise<void>{
+		try {
+			const { email, password } = request.body as any;
+			const user = await this.authService.validateUser(email, password);
 
-		const {email, password} = request.body as any;
-		const user = await this.authService.validateUser(email, password);
-
-		if (!user){
-			reply.status(400).send({message: 'Invalid credentials.'});
-			return;
+			if (!user) {
+				reply.status(400).send({ message: 'Invalid credentials.' });
+				return;
+			}
+			console.log(`[AuthController] login success for ${user.id}`);
+			UserService.markUserOnline(user.id);
+			const accessToken = await this.generateToken(user.id, reply);
+			reply.send({ accessToken });
 		}
-		console.log(`[AuthController] login success for ${user.id}`);
-		UserService.markUserOnline(user.id);
-
-		const accessToken = await this.generateToken(user.id, reply);
-		reply.send({ accessToken});
+		catch (err) {
+			const errMsg = err instanceof Error ? err.message : 'Unknown error';
+			reply.status(400).send({ message: errMsg });
+		}
 	}
 
 	async googleLogin(req: FastifyRequest, reply: FastifyReply){
+		try {
 		const { googleToken } = req.body as { googleToken: string};
 
 		const user = await this.authService.verifyGoogleTokenAndLogin(googleToken)
@@ -63,16 +66,21 @@ export class AuthController{
 		UserService.markUserOnline(user.id);
 		const token = await this.generateToken(user.id, reply);
 		reply.send({ token});
+		}
+		catch (err) {
+			const errMsg = err instanceof Error ? err.message : 'Unknown error';
+			reply.status(400).send({ message: errMsg });
+		}
 	}
 
 	async refreshToken(req: FastifyRequest, reply: FastifyReply){
-		const refreshToken = req.cookies.refreshToken;
-		if (!refreshToken){
-			reply.status(401).send({message: "No refresh token!"});
-			return;
-		}
-
 		try{
+			const refreshToken = req.cookies.refreshToken;
+			if (!refreshToken) {
+				reply.status(401).send({ message: "No refresh token!" });
+				return;
+			}
+
 			const payload = await this.fastify.jwt.verify<{ id: number}>(refreshToken);
 			const user = await this.authService.getUserById(payload.id);
 			if (!user)
@@ -87,16 +95,22 @@ export class AuthController{
 	}
 
 	async logout(req: FastifyRequest, reply: FastifyReply): Promise<void>{
-		const userId = (req as any).user.id as number;
-		console.log(`[UserController] logout invoked for ${userId}`);
-		UserService.markUserOffline(userId);
-		reply.clearCookie('refreshToken', {
-			path: '/',
-			httpOnly: true,
-			secure: true,
-			sameSite: 'strict'
-		});
-		reply.send({ message: 'You successfully logout.'});
+		try {
+			const userId = (req as any).user.id as number;
+			console.log(`[UserController] logout invoked for ${userId}`);
+			UserService.markUserOffline(userId);
+			reply.clearCookie('refreshToken', {
+				path: '/',
+				httpOnly: true,
+				secure: true,
+				sameSite: 'strict'
+			});
+			reply.send({ message: 'You successfully logout.' });
+		}
+		catch (err) {
+			const errMsg = err instanceof Error ? err.message : 'Unknown error';
+			reply.status(400).send({ message: errMsg });
+		}
 	}
 
 	private async generateToken(userId: number, reply: FastifyReply) {

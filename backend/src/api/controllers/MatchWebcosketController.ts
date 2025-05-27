@@ -15,20 +15,14 @@ export class MatchWebSocketController {
 				{
 					websocket: true,
 					preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-// 1) пытаемся взять токен из query
-						const token = (request.query as any).token as string | undefined;
-						if (!token) {
-							console.log('NO TOKEN');
-							reply.code(401).send({ error: 'Unauthorized: no token' });
-							throw new Error('No token');
-						}
-							console.log('TOKEN: ', token);
-						// 2) верифицируем его явно
 						try {
-							// request.jwtVerify умеет принимать опцию { token }
-							  const payload = fastify.jwt.verify(token);
-            // сохраняем payload в request.user, как это делает request.jwtVerify()
-            		(request as any).user = payload;
+							const token = (request.query as any).token as string | undefined;
+							if (!token) {
+								reply.code(401).send({ error: 'Unauthorized: no token' });
+								throw new Error('No token');
+							}
+							const payload = fastify.jwt.verify(token);
+							(request as any).user = payload;
 						} catch (err) {
 							reply.code(401).send({ error: 'Unauthorized: invalid token' });
 							throw err;

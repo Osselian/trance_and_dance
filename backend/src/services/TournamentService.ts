@@ -61,12 +61,12 @@ export class TournamentService {
 		return this.tournamentRepo.findById(id);
 	}
 
-	async getActiveTournaments(): Promise<Tournament[]> {
-		return this.tournamentRepo.findActive();
-	}
-
 	async listTournaments(): Promise<Tournament[]> {
 		return this.tournamentRepo.findAll();
+	}
+	
+	async getActiveTournaments(): Promise<Tournament[]> {
+		return this.tournamentRepo.findActive();
 	}
 
 	async updateTournament(id: number, updates: TournamentDto): Promise<Tournament> {
@@ -79,6 +79,7 @@ export class TournamentService {
 	}
 
 	async chechAndUpdateTournamentStatus(): Promise<Tournament[]> {
+		
 		const readyTournaments: Tournament[] = [];
 		const tournaments: Tournament[] = 
 			await this.tournamentRepo.findNotCompleted();
