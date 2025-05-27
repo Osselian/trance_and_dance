@@ -111,9 +111,6 @@ export class MatchWebSocketService {
 		const typedSocket = socket as SocketWithUser;
 		typedSocket.userId = userId;
 		typedSocket.matchId = matchId;
-		userMutex.runExclusive(() => {
-			typedSocket.playerNumber = this.getPlayerNumber(matchId, userId); // Изначально номер игрока не назначен
-		});
 
 		// Добавляем сокет в комнату, комнату в словарь
 		let room = this.rooms.get(matchId);
@@ -130,6 +127,9 @@ export class MatchWebSocketService {
 				this.playerNumbers.set(matchId, new Map());
 			});
 		}
+		userMutex.runExclusive(() => {
+			typedSocket.playerNumber = this.getPlayerNumber(matchId, userId); // Изначально номер игрока не назначен
+		});
 		
 		// Добавляем сокет в комнату
 		room.add(typedSocket);
