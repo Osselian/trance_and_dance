@@ -344,7 +344,7 @@ export class MatchWebSocketService {
 			return;
 
 		try {
-			game.handleClientMessage(socket.userId, msg);
+			game.handleClientMessage(socket.userId, socket.playerNumber, msg);
 		}
 		catch (error) {
 			socket.send(JSON.stringify({

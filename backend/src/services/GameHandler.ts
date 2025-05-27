@@ -40,7 +40,7 @@ export class GameHandler {
 		this.loserId = loserId;
 	}
 
-	public handleClientMessage(playerId: number, data: any): void {
+	public handleClientMessage(playerId: number, playerNumber: number, data: any): void {
 		// const data = JSON.parse(message);
 		
 		switch (data.type) {
@@ -49,7 +49,7 @@ export class GameHandler {
 				break;
 			case 'move':
 				if (data.direction && typeof data.direction === 'string') 
-					this.game.handlePlayerInput(data.direction, playerId);
+					this.game.handlePlayerInput(data.direction, playerNumber);
 				break;
 			case 'start':
 				this.startGame();
