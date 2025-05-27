@@ -4,6 +4,10 @@ import { Ball } from './Ball';
 import { Score } from './Score';
 import { GamesStateDto } from '../utils/types';
 
+const PURPLE = '#800080';
+const GREEN = '#00FF00';
+const RED = '#F08080';
+
 
 export class Game {
   private ws: WebSocket;
@@ -37,15 +41,9 @@ export class Game {
     // Set canvas size
     this.canvas.width = 800;
     this.canvas.height = 600;
-
-    // Initialize game objects
-    if (this.settings.playerNumber % 2 === 1) {
-      this.leftPaddle = new Paddle(50, true);
-      this.rightPaddle = new Paddle(this.canvas.width - 60, false);
-    } else {
-      this.leftPaddle = new Paddle(50, false);
-      this.rightPaddle = new Paddle(this.canvas.width - 60, true);
-    }
+    // Initialize paddles unoconditionally
+    this.leftPaddle = new Paddle(50, false, PURPLE);
+    this.rightPaddle = new Paddle(this.canvas.width - 60, false, PURPLE);
     this.ball = new Ball();
     this.score = new Score();
     // this.gameMode = mode ?? null;
@@ -57,6 +55,18 @@ export class Game {
 
   // all handling of websocket events and game logic is here
   public start(): void {
+
+        // assign player's paddle based on playerNumber
+      if (this.settings.playerNumber === 1) {
+        this.leftPaddle = new Paddle(50, true, GREEN);
+        this.rightPaddle = new Paddle(this.canvas.width - 60, false, RED);
+      } else if (this.settings.playerNumber === 2) {
+        this.leftPaddle = new Paddle(50, false, RED);
+        this.rightPaddle = new Paddle(this.canvas.width - 60, true, GREEN);
+      } else {
+        console.error('Invalid player number:', this.settings.playerNumber);
+        this.gameState = GameState.ERROR;
+      }
     // Set up WebSocket message handler
     console.log('Connected to game server, playerID:', this.settings.playerNumber);
     // Set the correct paddle as player's paddle based on playerNumber
@@ -160,6 +170,7 @@ export class Game {
           if (message.hasWinner) {
             this.WinnerId = message.winnerId;
             this.gameState = GameState.GAME_OVER;
+            console.log('YOOOO! Game ended like this: \n', message);
 			this.ws.close(); // Close the WebSocket connection after game over
           }
           if (message.ballPos) {
@@ -248,7 +259,7 @@ export class Game {
     if (this.gameState === GameState.START) {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
-      this.ctx.fillText('Press SPACE to start', this.canvas.width / 2, this.canvas.height / 2);
+      this.ctx.fillText('Waiting for opponent to join...', this.canvas.width / 2, this.canvas.height / 2);
     } else if (this.gameState === GameState.PAUSED) {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
@@ -256,14 +267,13 @@ export class Game {
     } else if (this.gameState === GameState.GAME_OVER) {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
-      
       let win_or_lose = '';
       if (this.WinnerId !== -1 && this.WinnerId === this.settings.playerNumber) {
         win_or_lose = 'won';
-      } else {
+      } else if (this.WinnerId !== -1 && this.WinnerId !== this.settings.playerNumber) {
         win_or_lose = 'lost';
       }
-      this.ctx.fillText(`You (ID ${this.settings.playerNumber}) ${win_or_lose}! Press SPACE to play again`,
+      this.ctx.fillText(`Player ${this.settings.playerNumber} ${win_or_lose}!`,
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }
