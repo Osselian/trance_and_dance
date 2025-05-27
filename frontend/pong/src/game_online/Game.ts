@@ -170,7 +170,7 @@ export class Game {
           if (message.hasWinner) {
             this.WinnerId = message.winnerId;
             this.gameState = GameState.GAME_OVER;
-            console.log('YOOOO! gameState ended like this: \n', message);
+            console.log('YOOOO! Game ended like this: \n', message);
 			this.ws.close(); // Close the WebSocket connection after game over
           }
           if (message.ballPos) {
@@ -273,7 +273,7 @@ export class Game {
       } else if (this.WinnerId !== -1 && this.WinnerId !== this.settings.playerNumber) {
         win_or_lose = 'lost';
       }
-      this.ctx.fillText(`You (player ${this.settings.playerNumber}) ${win_or_lose}!`,
+      this.ctx.fillText(`Player ${this.settings.playerNumber}) ${win_or_lose}!`,
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }
