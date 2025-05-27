@@ -58,15 +58,16 @@ export const tournamentView = `
             class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded hidden">
       Начать турнир
     </button>
-    <input id="participant-name" 
-       type="text" 
-       placeholder="Как мы вас будем называть в турнире?" 
-       class="..." />
-    <button id="join-tournament-btn"
-            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded hidden">
-      Присоединиться к турниру
-    </button>
-  </div>
+    <div id="actions-block" class="mt-4 hidden space-x-2">
+      <input id="participant-name"
+            type="text"
+            placeholder="Как вас называть?"
+            class="px-2 py-1 bg-gray-700 rounded text-white" />
+      <button id="join-tournament-btn"
+              class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">
+        Присоединиться к турниру
+      </button>
+    </div>
 </section>
 `;
 
@@ -93,6 +94,7 @@ export async function initTournament(): Promise<void> {
   const joinBtn     = document.getElementById('join-tournament-btn') as HTMLButtonElement;
   const tbody       = document.getElementById('matches-list')!;
   const bracketCt   = document.getElementById('bracket-container')!;
+  const actionsBlock = document.getElementById('actions-block')!;
 
   // 3) Парсим tourId из hash
   const [, qs] = window.location.hash.split('?');
@@ -126,12 +128,11 @@ export async function initTournament(): Promise<void> {
     // Заголовок
     nameDisplay.textContent = tour.name;
     idDisplay.textContent   = String(tour.id);
-  console.log('PARTICIPANTS RAW:', participants);
     const ul = document.getElementById('participants-ul')!;
     ul.innerHTML = '';  // очистить старый список
     participants.forEach(p => {
       const li = document.createElement('li');
-      li.textContent = p.user.username;
+      li.textContent = p.tournamentName ?? p.user.username;
       ul.appendChild(li);
     });
 
@@ -150,11 +151,11 @@ export async function initTournament(): Promise<void> {
     }
 
     // Кнопка «Присоединиться»
-    const isIn = participants.some((p: any) => p.userId === userId);
+    const isIn = participants.some(p => p.userId === userId);
     if (tour.status === 'REGISTRATION' && !isIn) {
-      joinBtn.classList.remove('hidden');
+      actionsBlock.classList.remove('hidden');
     } else {
-      joinBtn.classList.add('hidden');
+      actionsBlock.classList.add('hidden');
     }
 
     // Кнопка «Начать турнир»
