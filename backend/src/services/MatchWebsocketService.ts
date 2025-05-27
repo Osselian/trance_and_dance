@@ -5,14 +5,20 @@ import { WebSocket } from '@fastify/websocket';
 import { TournamentMatchService } from './TournamentMatchService';
 import { Match, TournamentMatch } from '@prisma/client';
 import { MatchRepository } from '../repositories/MatchRepository';
+import { UserService } from './UserService';
+import { Mutex } from 'async-mutex';
 
-type SocketWithUser = WebSocket & { userId: number; matchId: number};
+export type SocketWithUser = WebSocket & { 
+	userId: number; matchId: number; playerNumber?: number };
+
+const userMutex: Mutex = new Mutex();
 
 export class MatchWebSocketService {
 	private static instance: MatchWebSocketService;
 	private rooms: Map<number, Set<SocketWithUser>> = new Map();
 	private games: Map<number, GameHandler> = new Map();
 	private matchRepo = new MatchRepository();
+	private userService = new UserService();
 
 	private userConnections: Map<number, {
 		socketId: string,
@@ -105,6 +111,9 @@ export class MatchWebSocketService {
 		const typedSocket = socket as SocketWithUser;
 		typedSocket.userId = userId;
 		typedSocket.matchId = matchId;
+		userMutex.runExclusive(() => {
+			typedSocket.playerNumber = this.getPlayerNumber(matchId, userId); // Изначально номер игрока не назначен
+		});
 
 		// Добавляем сокет в комнату, комнату в словарь
 		let room = this.rooms.get(matchId);
@@ -117,7 +126,9 @@ export class MatchWebSocketService {
 			this.games.set(matchId, gameService);
 			
 			// Инициализируем карту номеров игроков для этого матча
-			this.playerNumbers.set(matchId, new Map());
+			userMutex.runExclusive(() => {
+				this.playerNumbers.set(matchId, new Map());
+			});
 		}
 		
 		// Добавляем сокет в комнату
@@ -259,10 +270,20 @@ export class MatchWebSocketService {
 	private endGame(socket: SocketWithUser, game: GameHandler) {
 		this.rooms.delete(socket.matchId);
 		this.games.delete(socket.matchId);
-		this.playerNumbers.delete(socket.matchId); // Удаляем номера игроков
+		userMutex.runExclusive(() => {
+			this.playerNumbers.delete(socket.matchId); // Удаляем номера игроков
+		});
 		
 		try {
-			this.matchRepo.completeMatch(socket.matchId, game.getWinnerId()!);
+			const winnerId = game.getWinnerId();
+			if (!winnerId) 
+				throw new Error('No winner found');
+			const loserId = game.getLoserId();
+			if (!loserId) 
+				throw new Error('No loser found');
+			this.matchRepo.completeMatch(socket.matchId, winnerId);
+			this.userService.updateWins(winnerId);
+			this.userService.updateLoses(loserId);
 		}
 		catch{
 			console.log("CAN'T COMPLETE MATCH");
@@ -285,14 +306,12 @@ export class MatchWebSocketService {
 		matchId: number,
 		room: Set<SocketWithUser>) 
 	{
-		// Получаем стабильный номер игрока
-		const playerNumber = this.getPlayerNumber(matchId, userId);
 		
 		typedSocket.send(JSON.stringify({
 			type: 'connection',
 			status: 'connected',
 			playerId: userId,
-			playerNumber: playerNumber, // Используем стабильный номер игрока
+			playerNumber: typedSocket.playerNumber, // Используем стабильный номер игрока
 			roomId: matchId,
 			playersConnected: room.size,
 			playersNeeded: 2
@@ -305,7 +324,7 @@ export class MatchWebSocketService {
 					type: 'playerConnected',
 					playersConnected: room.size,
 					playersNeeded: 2,
-					newPlayerNumber: playerNumber // Сообщаем номер нового игрока
+					newPlayerNumber: typedSocket.playerNumber // Сообщаем номер нового игрока
 				}));
 			}
 		}
@@ -345,4 +364,6 @@ export class MatchWebSocketService {
 		
 		return connection.matchId === matchId && !connection.disconnectTimeout;
 	}
+
+
 }
