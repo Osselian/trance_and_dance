@@ -23,6 +23,9 @@ export class MatchWebSocketService {
 
 	private readonly RECONNECT_TIMEOUT = 60000; // 1 minute
 
+	// Добавим отслеживание назначенных номеров игроков для каждого матча
+	private playerNumbers: Map<number, Map<number, number>> = new Map(); // matchId -> [userId -> playerNumber]
+
 	constructor(private matchService = new MatchmakingService())
 	{
 		MatchWebSocketService.instance = this;
@@ -98,12 +101,12 @@ export class MatchWebSocketService {
 	}
 
 	private fillRoom(socket: WebSocket, userId: number, matchId: number): SocketWithUser {
-		//привязка полей к сокету
+		// Привязка полей к сокету
 		const typedSocket = socket as SocketWithUser;
 		typedSocket.userId = userId;
 		typedSocket.matchId = matchId;
 
-		//добавляем сокет в комнату, команту в словарь
+		// Добавляем сокет в комнату, комнату в словарь
 		let room = this.rooms.get(matchId);
 		if (!room) {
 			room = new Set();
@@ -112,13 +115,40 @@ export class MatchWebSocketService {
 			// Создаем новый экземпляр GameService для этой комнаты
 			const gameService = new GameHandler();
 			this.games.set(matchId, gameService);
+			
+			// Инициализируем карту номеров игроков для этого матча
+			this.playerNumbers.set(matchId, new Map());
 		}
+		
 		// Добавляем сокет в комнату
 		room.add(typedSocket);
 		let game = this.games.get(matchId);
 		game?.addClient(userId, typedSocket);
 
 		return typedSocket;
+	}
+	
+	// Метод для получения корректного номера игрока
+	private getPlayerNumber(matchId: number, userId: number): number {
+		let playerNumbersMap = this.playerNumbers.get(matchId);
+		if (!playerNumbersMap) 
+			throw new Error(`Match with ID ${matchId} not found`);
+		
+		// Если игрок уже имеет номер, вернем его
+		if (playerNumbersMap.has(userId)) {
+			return playerNumbersMap.get(userId)!;
+		}
+		
+		// Иначе, найдем первый доступный номер (начиная с 1)
+		const usedNumbers = new Set(playerNumbersMap.values());
+		let playerNumber = 1;
+		while (usedNumbers.has(playerNumber)) {
+			playerNumber++;
+		}
+		
+		// Сохраняем номер игрока
+		playerNumbersMap.set(userId, playerNumber);
+		return playerNumber;
 	}
 
 	private setupActivityTracking(socket: SocketWithUser, userId: number) {
@@ -229,6 +259,8 @@ export class MatchWebSocketService {
 	private endGame(socket: SocketWithUser, game: GameHandler) {
 		this.rooms.delete(socket.matchId);
 		this.games.delete(socket.matchId);
+		this.playerNumbers.delete(socket.matchId); // Удаляем номера игроков
+		
 		try {
 			this.matchRepo.completeMatch(socket.matchId, game.getWinnerId()!);
 		}
@@ -253,22 +285,27 @@ export class MatchWebSocketService {
 		matchId: number,
 		room: Set<SocketWithUser>) 
 	{
+		// Получаем стабильный номер игрока
+		const playerNumber = this.getPlayerNumber(matchId, userId);
+		
 		typedSocket.send(JSON.stringify({
 			type: 'connection',
 			status: 'connected',
 			playerId: userId,
-			playerNumber: room.size,
+			playerNumber: playerNumber, // Используем стабильный номер игрока
 			roomId: matchId,
 			playersConnected: room.size,
 			playersNeeded: 2
 		}));
 
+		// Оповещаем других игроков о новом подключении
 		for (const client of room) {
 			if (client !== typedSocket) {
 				client.send(JSON.stringify({
 					type: 'playerConnected',
 					playersConnected: room.size,
-					playersNeeded: 2
+					playersNeeded: 2,
+					newPlayerNumber: playerNumber // Сообщаем номер нового игрока
 				}));
 			}
 		}

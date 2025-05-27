@@ -6,23 +6,23 @@ export class Score {
   private scoreDisplay: HTMLElement;
 
   constructor() {
-    this.score = { player: 0, computer: 0 };
+    this.score = { leftPlayer: 0, rightPlayer: 0 };
     this.scoreDisplay = document.getElementById('scoreDisplay') as HTMLElement;
     this.updateDisplay();
   }
 
   public incrementPlayer(): void {
-    this.score.player++;
+    this.score.leftPlayer++;
     this.updateDisplay();
   }
 
   public incrementComputer(): void {
-    this.score.computer++;
+    this.score.rightPlayer++;
     this.updateDisplay();
   }
 
   public reset(): void {
-    this.score = { player: 0, computer: 0 };
+    this.score = { leftPlayer: 0, rightPlayer: 0 };
     this.updateDisplay();
   }
 
@@ -31,16 +31,16 @@ export class Score {
   }
 
   public hasWinner(): boolean {
-    return this.score.player >= SCORE_TO_WIN || this.score.computer >= SCORE_TO_WIN;
+    return this.score.leftPlayer >= SCORE_TO_WIN || this.score.rightPlayer >= SCORE_TO_WIN;
   }
 
   public getWinner(): 'player' | 'computer' | null {
-    if (this.score.player >= SCORE_TO_WIN) return 'player';
-    if (this.score.computer >= SCORE_TO_WIN) return 'computer';
+    if (this.score.leftPlayer >= SCORE_TO_WIN) return 'player';
+    if (this.score.rightPlayer >= SCORE_TO_WIN) return 'computer';
     return null;
   }
 
   private updateDisplay(): void {
-    this.scoreDisplay.textContent = `${this.score.player} - ${this.score.computer}`;
+    this.scoreDisplay.textContent = `${this.score.leftPlayer} - ${this.score.rightPlayer}`;
   }
 } 
