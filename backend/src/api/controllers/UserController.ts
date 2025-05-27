@@ -23,6 +23,7 @@ export class UserController {
 		this.fastify.get('/friend-requests', this.getIncomingRequests.bind(this));
 		this.fastify.get('/:id', this.getUserById.bind(this));
 		this.fastify.get('/statuses', this.getOnlineStatuses.bind(this));
+		this.fastify.get('/:id/stats', this.getUserStats.bind(this));
 	}
 
 	async getAll(req: FastifyRequest, reply: FastifyReply){
@@ -190,6 +191,16 @@ export class UserController {
 
 			// 3) Отдаем результат клиенту
 			return reply.send(statuses);
+		} catch (err) {
+			const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+			reply.status(500).send({ message: errorMsg });
+		}
+	}
+	private async getUserStats(req: FastifyRequest, reply: FastifyReply) {	
+		try {
+			const userId = (req as any).user.id as number;
+			const stats = await this.userService.getUserStats(userId);
+			reply.send(stats);
 		} catch (err) {
 			const errorMsg = err instanceof Error ? err.message : 'Unknown error';
 			reply.status(500).send({ message: errorMsg });

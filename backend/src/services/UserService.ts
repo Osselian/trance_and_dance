@@ -119,4 +119,14 @@ export class UserService {
 			online: UserService.isUserOnline(id),
 			}));
 	}
+	async getUserStats(userId: number): Promise<{ wins: number; losses: number }> {	
+		const user = await this.userRepo.findById(userId);
+		if (!user) {
+			throw new Error('User not found');
+		}
+		return {
+			wins: user.wins || 0,
+			losses: user.losses || 0
+		};
+	}
 }

@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { MatchmakingService } from "../../services/MatchmakingService";
 import { Match, MatchStatus} from '@prisma/client'
+import { REPL_MODE_SLOPPY } from "repl";
 
 export class MatchmakingController {
 	constructor(
@@ -12,6 +13,7 @@ export class MatchmakingController {
 		this.fastify.post('/join', this.joinQueue.bind(this));
 		this.fastify.post('/leave', this.leaveQueue.bind(this));
 		this.fastify.get('/checkPending', this.checkForPendingMatch.bind(this))
+		this.fastify.get('/:id/findMatch', this.findMatchForPlayer.bind(this));
 	}
 
 	public registerPublicRoutes(): void {
@@ -65,6 +67,22 @@ export class MatchmakingController {
 		catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error';
 			reply.status(500).send({ message: msg});
+		}
+	}
+
+	private async findMatchForPlayer(req: FastifyRequest, reply: FastifyReply) {	
+		try {
+			const userId = (req.user as any).id as number;
+			const match = await this.mmService.findMatchForPlayer(userId);
+			if (!match) return null;
+			if (match.status !== MatchStatus.PENDING) {
+				throw new Error('Match is not pending');
+			}
+			reply.send(match);
+		}
+		catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error';
+			throw new Error(msg);
 		}
 	}
 }
