@@ -154,10 +154,10 @@ export async function initTournament(): Promise<void> {
     }
 
     // Кнопка «Начать турнир»
-    const isOwner = participants.length > 0 && participants[0].userId === userId;
+    // const isOwner = participants.length > 0 && participants[0].userId === userId;
     const full    = participants.length === tour.requiredPlayers;
-    const pending = tour.match?.status === 'PENDING';
-    if (pending && isOwner && full) {
+    const pending = tour.match?.status === 'ONGOING';
+    if (pending && full) {
       startBtn.classList.remove('hidden');
     } else {
       startBtn.classList.add('hidden');
@@ -165,63 +165,88 @@ export async function initTournament(): Promise<void> {
   }
 
   // 6) Рендер бракета
-  async function renderBracket(id: string) {
-    bracketCt.innerHTML = '';
-    const res = await fetch(`${BASE}/tournament/${id}/bracket`, { headers });
-    if (!res.ok) {
-      bracketCt.textContent = 'Нет сетки';
-      return;
-    }
-    const matches: any[] = await res.json();
+async function renderBracket(id: string) {
+  bracketCt.innerHTML = '';
 
-    const partsRes = await fetch(
-      `${BASE}/tournamentParticipant/${id}/participants`,
-      { headers }
-    );
+  // 1) Получаем все матчи
+  const res = await fetch(`${BASE}/tournament/${id}/bracket`, { headers });
+  if (!res.ok) {
+    bracketCt.textContent = 'Нет сетки';
+    return;
+  }
+  const matches: any[] = await res.json();
 
+  // 2) Получаем участников, чтобы собрать мапу userId → username
+  const partsRes = await fetch(`${BASE}/tournamentParticipant/${id}/participants`, { headers });
   const participants: any[] = partsRes.ok ? await partsRes.json() : [];
   const nameMap = new Map<number,string>();
   participants.forEach(p => {
     nameMap.set(p.userId, p.user.username);
   });
-    // Группировка по раундам
-    const rounds = new Map<number, any[]>();
-    matches.forEach(m => {
-      if (!rounds.has(m.round)) rounds.set(m.round, []);
-      rounds.get(m.round)!.push(m);
+
+  // 3) Группируем матчи по раундам
+  const rounds = new Map<number, any[]>();
+  matches.forEach(m => {
+    if (!rounds.has(m.round)) rounds.set(m.round, []);
+    rounds.get(m.round)!.push(m);
+  });
+
+  // 4) Рисуем колонки по раундам
+  const wrapper = document.createElement('div');
+  wrapper.className = 'flex gap-4';
+
+  Array.from(rounds.entries())
+    .sort(([a], [b]) => a - b)
+    .forEach(([round, ms]) => {
+      const col = document.createElement('div');
+      col.className = 'min-w-[160px]';
+      const h3 = document.createElement('h3');
+      h3.textContent = `Раунд ${round}`;
+      h3.className = 'text-lg font-semibold mb-2';
+      col.appendChild(h3);
+
+      ms.forEach(m => {
+        // 4.1) Имёна игроков
+        const p1 = nameMap.get(m.match.player1Id) ?? '—';
+        const p2 = nameMap.get(m.match.player2Id) ?? '—';
+
+        // 4.2) Основная карточка матча
+        const card = document.createElement('div');
+        card.className = 'mb-2 p-2 bg-gray-700 rounded';
+        card.innerHTML = `
+          <div class="flex justify-between">
+            <span>${p1}</span>
+            <span>vs</span>
+            <span>${p2}</span>
+          </div>
+          <div class="text-sm text-gray-400">#${m.bracketPos}</div>
+        `;
+
+        // 4.3) Если матч PENDING и вы в нём — показываем кнопку
+        if (
+          m.match.status === 'PENDING' &&
+          (m.match.player1Id === userId || m.match.player2Id === userId)
+        ) {
+          console.log('Match object:', m);
+          const playBtn = document.createElement('button');
+          playBtn.textContent = 'Играть онлайн';
+          playBtn.className = 'mt-2 px-2 py-1 bg-blue-600 rounded hover:bg-blue-500 text-sm';
+          playBtn.addEventListener('click', () => {
+            console.log('starting m.matchId=', m.match.matchId);
+            console.log('starting matchId=', m.matchId);
+            location.hash = `#/play/quick/${m.matchId}`;
+          });
+          card.appendChild(playBtn);
+        }
+
+        col.appendChild(card);
+      });
+
+      wrapper.appendChild(col);
     });
 
-    // Отрисовка
-    const wrapper = document.createElement('div');
-    wrapper.className = 'flex gap-4';
-    Array.from(rounds.entries())
-      .sort(([a], [b]) => a - b)
-      .forEach(([round, ms]) => {
-        const col = document.createElement('div');
-        col.className = 'min-w-[160px]';
-        const h3 = document.createElement('h3');
-        h3.textContent = `Раунд ${round}`;
-        h3.className = 'text-lg font-semibold mb-2';
-        col.appendChild(h3);
-        ms.forEach(m => {
-          const p1 = nameMap.get(m.match.player1Id) ?? '—';
-          const p2 = nameMap.get(m.match.player2Id) ?? '—';
-          const card = document.createElement('div');
-          card.className = 'mb-2 p-2 bg-gray-700 rounded';
-          card.innerHTML = `
-            <div class="flex justify-between">
-              <span>${p1}</span>
-              <span>vs</span>
-              <span>${p2}</span>
-            </div>
-            <div class="text-sm text-gray-400">#${m.bracketPos}</div>
-          `;
-          col.appendChild(card);
-        });
-        wrapper.appendChild(col);
-      });
-    bracketCt.appendChild(wrapper);
-  }
+  bracketCt.appendChild(wrapper);
+}
 
   // 7) Начальное отображение
   if (tourId) {
@@ -290,6 +315,7 @@ export async function initTournament(): Promise<void> {
   // 11) Начать турнир
   startBtn.addEventListener('click', async () => {
     if (!tourId) return;
+    console.log("TOURID", tourId);
     try {
       const res = await fetch(`${BASE}/tournament/${tourId}/start`, {
         method: 'POST',
