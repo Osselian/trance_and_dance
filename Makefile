@@ -10,10 +10,12 @@ GRAFANA_CERT_DIR := devops/monitoring/grafana/certs
 PROMETHEUS_CERT_DIR := devops/monitoring/prometheus/certs
 ELK_CERT_DIR        := devops/elk/certs
 
+ELK_COMPOSE := docker-compose -f docker-compose.yml -f docker-compose.elk.yml
 
-.PHONY: all certs up down down-volumes
 
-all: certs up
+.PHONY: all certs prepare-kibana-config up down down-volumes
+
+all: certs prepare-kibana-config up
 
 certs:
 	@echo "→ Generating mkcert root CA (idempotent)…"
@@ -35,6 +37,19 @@ certs:
 	@echo "→ Generating ELK cert…"
 	@mkcert -key-file $(ELK_CERT_DIR)/ELK.key        -cert-file $(ELK_CERT_DIR)/ELK.crt        $(HOSTS)
 	@chmod 644 $(ELK_CERT_DIR)/*.key || true
+	@cp "$$(mkcert -CAROOT)/rootCA.pem" $(ELK_CERT_DIR)/rootCA.pem
+
+prepare-kibana-config:
+	@echo "→ Запуск Elasticsearch для генерации токена Kibana…"
+	@$(ELK_COMPOSE) up -d elasticsearch
+	@sleep 20 # ждем Elasticsearch
+	@export KIBANA_SERVICE_TOKEN=$$($(ELK_COMPOSE) exec elasticsearch \
+		bin/elasticsearch-service-tokens create elastic/kibana kibana-token | tr -d '\r' | awk '{print $$4}') && \
+		echo "→ Токен сгенерирован: $$KIBANA_SERVICE_TOKEN" && \
+		mkdir -p devops/elk/config && \
+		KIBANA_SERVICE_TOKEN=$$KIBANA_SERVICE_TOKEN envsubst \
+			< devops/elk/config/kibana.yml.tpl \
+			> devops/elk/config/kibana.yml
 up:
 	docker-compose -f docker-compose.yml -f docker-compose.elk.yml up --build
 
