@@ -1,3 +1,5 @@
+include .env
+export
 
 HOSTS := localhost 127.0.0.1 ::1 backend frontend-admin frontend-pong grafana prometheus elasticsearch kibana logstash 
 
