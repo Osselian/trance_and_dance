@@ -1,5 +1,10 @@
 import { BASE } from './auth'
 
+export interface UserStats {
+	  wins: number
+	  losses: number
+}
+
 // Helpers
 async function get<T>(endpoint: string): Promise<T> {
   const token = localStorage.getItem('token')
@@ -28,10 +33,10 @@ async function put<T>(endpoint: string, body: unknown): Promise<T> {
 
 // Data types
 export interface Profile {
-  id:        number
-  username:  string
-  email:     string
-  avatarUrl: string
+  id:       	number
+  username: 	string
+  email:    	string
+  avatarUrl:	string
 }
 
 // API object
@@ -79,4 +84,18 @@ export const UserAPI = {
     const data: { profile: Profile } = await resp.json()
     return data.profile.avatarUrl
   },
+
+  /**
+   * Получить статистику пользователя
+   * GET /user/:id/stats
+   */
+  	getUserStats: (id: number): Promise<UserStats> =>
+		get(`/user/${id}/stats`),
+
+	  /**
+   * Получить статистику своего профиля
+   * GET /user/profile/stats
+   */
+  	getMyStats: (): Promise<UserStats> =>
+		get('/user/profile/stats'),
 }

@@ -45,6 +45,38 @@ export class UserService {
 		return this.userRepo.updateUserProfile(userId, updateData);
 	}
 
+	async updateWins(userId: number) {
+		try {
+			const user = await this.userRepo.findById(userId);
+			if (!user)
+				throw new Error('User not found');
+
+			const updData = {wins: user.wins + 1};
+			this.userRepo.updateUserProfile(userId, updData);
+		}
+		catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error';
+			console.error(`[UserService] updateWins: ${msg}`);
+			throw new Error(msg);
+		}
+	}
+
+	async updateLoses(userId: number) {
+		try {
+			const user = await this.userRepo.findById(userId);
+			if (!user)
+				throw new Error('User not found');
+
+			const updData = {losses: user.losses + 1};
+			this.userRepo.updateUserProfile(userId, updData);
+		}
+		catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error';
+			console.error(`[UserService] updateWins: ${msg}`);
+			throw new Error(msg);
+		}
+	}
+
 	static markUserOnline(userId: number) {
 		console.log(`[UserService] markUserOnline: ${userId}`);
 		onlineUsers.add(userId);
@@ -118,5 +150,15 @@ export class UserService {
 			id,
 			online: UserService.isUserOnline(id),
 			}));
+	}
+	async getUserStats(userId: number): Promise<{ wins: number; losses: number }> {	
+		const user = await this.userRepo.findById(userId);
+		if (!user) {
+			throw new Error('User not found');
+		}
+		return {
+			wins: user.wins || 0,
+			losses: user.losses || 0
+		};
 	}
 }

@@ -42,6 +42,7 @@ export interface Message {
   receiverId: number;
   content: string;
   createdAt: string;
+  type: string; 
 }
 
 export interface Conversation {
@@ -59,7 +60,13 @@ export interface Me {
   avatarUrl: string | null;
 }
 
+export interface SystemUser {
+  id: number;
+}
+
 export const ChatAPI = {
+
+  getSystemUser: (): Promise<SystemUser> => get('/user/system'),
 
   getMe: (): Promise<Me> => get('/user/profile'),
   // получить список диалогов (userId, user: {…})

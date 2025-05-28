@@ -16,10 +16,9 @@ export class InvitationController {
 	}
 
 	private async sendInvite(req: FastifyRequest, reply: FastifyReply) {
-		const fromId = (req.user as any).id;
-		const { toUserId, game}  = req.body as {toUserId: number; game: string};
-
-		try { 
+		try {
+			const fromId = (req.user as any).id;
+			const { toUserId, game } = req.body as { toUserId: number; game: string };
 			const inv = await this.invService.sendInvite(fromId, toUserId, game);
 			reply.status(201).send(inv);
 		}
@@ -29,35 +28,42 @@ export class InvitationController {
 	}
 
 	private async listIncoming(req: FastifyRequest, reply: FastifyReply) {
-		const toId = (req.user as any).id;
-		const query = req.query as Record<string, string>;
-		const paging: PagingDto = {
-			limit: query.limit ? Number(query.limit) : undefined,
-			lastId: query.lastId ? Number(query.lastId) : undefined,
-			lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
+		try {
+			const toId = (req.user as any).id;
+			const query = req.query as Record<string, string>;
+			const paging: PagingDto = {
+				limit: query.limit ? Number(query.limit) : undefined,
+				lastId: query.lastId ? Number(query.lastId) : undefined,
+				lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
+			}
+			const invs = await this.invService.listIncoming(toId, paging);
+			reply.send(invs);
+		} catch (err) {
+			reply.status(400).send({ message: (err as Error).message });
 		}
-		const invs = await this.invService.listIncoming(toId, paging);
-		reply.send(invs);
 	}
 
 	private async listOutgoing(req: FastifyRequest, reply: FastifyReply) {
-		const fromId = (req.user as any).id;
-		const query = req.query as Record<string, string>;
-		const paging: PagingDto = {
-			limit: query.limit ? Number(query.limit) : undefined,
-			lastId: query.lastId ? Number(query.lastId) : undefined,
-			lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
+		try {
+			const fromId = (req.user as any).id;
+			const query = req.query as Record<string, string>;
+			const paging: PagingDto = {
+				limit: query.limit ? Number(query.limit) : undefined,
+				lastId: query.lastId ? Number(query.lastId) : undefined,
+				lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
+			}
+			const invs = await this.invService.listOutgoing(fromId, paging);
+			reply.send(invs);
+		} catch (err) {
+			reply.status(400).send({ message: (err as Error).message });
 		}
-		const invs = await this.invService.listOutgoing(fromId, paging);
-		reply.send(invs);
 	}
 
 	private async respond(req: FastifyRequest, reply: FastifyReply) {
-		const userId = (req.user as any).id;
-		const inviteId = Number((req.params as any).id);
-		const { accept } = req.body as { accept: boolean};
-
 		try {
+			const userId = (req.user as any).id;
+			const inviteId = Number((req.params as any).id);
+			const { accept } = req.body as { accept: boolean };
 			const res = await this.invService.respondInvite(inviteId, userId, accept);
 			reply.send(res);
 		}

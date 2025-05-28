@@ -16,11 +16,11 @@ export class ChatController {
 	}
 
 	private async sendMessage(req: FastifyRequest, reply: FastifyReply){
-		const senderId = (req.user as any).id;
-		const receiverId = Number((req.params as any).id);
-		const { content } = req.body as { content: string};
-
 		try {
+			const senderId = (req.user as any).id;
+			const receiverId = Number((req.params as any).id);
+			const { content } = req.body as { content: string };
+
 			const msg = await this.chatService.sendMessage(senderId, receiverId, content);
 			reply.status(201).send(msg);
 		}
@@ -30,16 +30,16 @@ export class ChatController {
 	}
 
 	private async getConversation(req: FastifyRequest, reply: FastifyReply) {
-		const userA = (req.user as any).id;
-		const userB = Number((req.params as any).id);
-
-		const query = req.query as Record<string, string>;
-		const paging: PagingDto = {
-			limit: query.limit ? Number(query.limit) : undefined,
-			lastId: query.lastId ? Number(query.lastId) : undefined,
-			lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
-		}
 		try {
+			const userA = (req.user as any).id;
+			const userB = Number((req.params as any).id);
+
+			const query = req.query as Record<string, string>;
+			const paging: PagingDto = {
+				limit: query.limit ? Number(query.limit) : undefined,
+				lastId: query.lastId ? Number(query.lastId) : undefined,
+				lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
+			}
 			const conv = await this.chatService.getConversation(userA, userB, paging);
 			reply.send(conv);
 		}
@@ -49,23 +49,22 @@ export class ChatController {
 	}
 
 	private async getUnread(req: FastifyRequest, reply: FastifyReply) {
-		const receiverId = (req.user as any).id;
-		const senderId = Number((req.params as any).id);
-
-		const query = req.query as Record<string, string>;
-		const paging: PagingDto = {
-			limit: query.limit ? Number(query.limit) : undefined,
-			lastId: query.lastId ? Number(query.lastId) : undefined,
-			lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
-		}
-
 		try {
+			const receiverId = (req.user as any).id;
+			const senderId = Number((req.params as any).id);
+
+			const query = req.query as Record<string, string>;
+			const paging: PagingDto = {
+				limit: query.limit ? Number(query.limit) : undefined,
+				lastId: query.lastId ? Number(query.lastId) : undefined,
+				lastCreatedAt: query.lastCreatedAt ? new Date(query.lastCreatedAt) : undefined
+			}
 			const unread = await this.chatService
 				.fetchAndMarkRead(receiverId, senderId, paging);
 			reply.send(unread);
 		}
 		catch (err) {
-			reply.status(400).send({ message: (err as Error).message});
+			reply.status(400).send({ message: (err as Error).message });
 		}
 	}
 

@@ -12,6 +12,7 @@ import fastifyStatic from '@fastify/static';
 import {fastifyWebsocket} from '@fastify/websocket';
 import {TournamentService} from './services/TournamentService';
 import { TournamentMatchService } from './services/TournamentMatchService';
+import { SystemUserService } from './services/SystemUserService';
 
 // server init
 const fastify = Fastify(
@@ -37,17 +38,6 @@ fastify.register(fastifyCors, {
 	methods: ['GET', 'POST', 'DELETE', 'OPTIONS', 'PUT']
 });
 
-fastify.register(fastifyStatic, {
-  root: path.join(__dirname, '../data'),
-  prefix: '/img/',
-  decorateReply: true,       // по умолчанию
-});
-
-fastify.register(fastifyStatic, {
-  root: path.join(__dirname, '../uploads'),
-  prefix: '/uploads/',
-  decorateReply: false,
-});
 
 
 fastify.register(fastifyCookie);
@@ -61,13 +51,41 @@ fastify.register(fastifyMultipart);
 fastify.register(require('@fastify/websocket'));
 registerRoutes(fastify);
 
-//server start
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../data'),
+  prefix: '/img/',
+  decorateReply: true,       // по умолчанию
+});
+
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../uploads'),
+  prefix: '/uploads/',
+  decorateReply: false,
+});
+
+// Добавьте перед запуском сервера
+const initSystemUser = async () => {
+  try {
+    const systemUserService = new SystemUserService();
+    await systemUserService.ensureSystemUserExists();
+    console.log('System user initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize system user:', error);
+  }
+};
+
+// Инициализируем системного пользователя перед запуском сервера
+fastify.addHook('onReady', async () => {
+  await initSystemUser();
+});
+
+// Запуск сервера
 fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
-	if (err) {
-		fastify.log.error(err);
-		process.exit(1);
-	}
-	fastify.log.info('Server starts at ${address}');
+  if (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+  fastify.log.info(`Server starts at ${address}`);
 });
 
 const mmService = new MatchmakingService();
@@ -86,7 +104,7 @@ setInterval(async () => {
 	} catch (err) {
 		console.error('Error checking tournaments:', err);
 	}
-}, 60000); // every minute
+}, 5000); // every minute
 
 // setInterval(async () => {
 // 	try {

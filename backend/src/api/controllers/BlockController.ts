@@ -14,10 +14,9 @@ export class BlockController {
 	}
 
 	private async block(req: FastifyRequest, reply: FastifyReply) {
-		const blockerId = (req.user as any).id;
-		const blockedId = Number((req.params as any).id);
-
 		try {
+			const blockerId = (req.user as any).id;
+			const blockedId = Number((req.params as any).id);
 			const res = await this.blockService.blockUser(blockerId, blockedId);
 			reply.status(201).send(res);
 		}
@@ -27,10 +26,9 @@ export class BlockController {
 	}
 
 	private async unblock(req: FastifyRequest, reply: FastifyReply) {
-		const blockerId = (req.user as any).id;
-		const blockedId = Number((req.params as any).id);
-
 		try {
+			const blockerId = (req.user as any).id;
+			const blockedId = Number((req.params as any).id);
 			const res = await this.blockService.unblockUser(blockerId, blockedId);
 			reply.status(201).send(res);
 		}
@@ -40,8 +38,8 @@ export class BlockController {
 	}
 
 	private async list(req: FastifyRequest, reply: FastifyReply) {
-		const blockerId = (req.user as any).id;
 		try {
+			const blockerId = (req.user as any).id;
 			const res = await this.blockService.listBlocked(blockerId);
 			reply.send(res);
 		}

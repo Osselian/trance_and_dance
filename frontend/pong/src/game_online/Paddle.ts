@@ -6,20 +6,19 @@ export class Paddle {
   private size: Size;
   // private currentSpeed: number;
   private isPlayer: boolean;
-  private isMoving: boolean;
-  private moveDirection: 'up' | 'down' | null;
+  private color: string;
 
-  constructor(x: number, isPlayer: boolean) {
+
+  constructor(x: number, isPlayer: boolean, color: string) {
     this.position = { x, y: 250 }; // Start in the middle vertically
     this.size = { width: PADDLE_WIDTH, height: PADDLE_HEIGHT };
     // this.currentSpeed = 0;
     this.isPlayer = isPlayer;
-    this.isMoving = false;
-    this.moveDirection = null;
+    this.color = color;
   }
-
+  // add purple color code to this comment: #800080
   public draw(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = this.isPlayer ? '#00FF00' : '#FF0000'; // Green for player, Red for opponent
+    ctx.fillStyle = this.color// '#00FF00' : '#F08080'; // Green for player, Red for opponent
     ctx.fillRect(
       this.position.x,
       Math.round(this.position.y),
@@ -29,13 +28,9 @@ export class Paddle {
   }
 
   public move(direction: 'up' | 'down', canvasHeight: number): void {
-    this.isMoving = true;
-    this.moveDirection = direction;
   }
 
   public stop(): void {
-    this.isMoving = false;
-    this.moveDirection = null;
   }
 
 
@@ -54,8 +49,6 @@ export class Paddle {
   public reset(canvasHeight: number): void {
     this.position.y = (canvasHeight - this.size.height) / 2;
     // this.currentSpeed = 0;
-    this.isMoving = false;
-    this.moveDirection = null;
   }
 
   public setPosition(y: number): void {

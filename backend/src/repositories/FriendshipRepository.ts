@@ -61,4 +61,17 @@ export class FriendshipRepository {
       include: { requester: true }
     });
   }
+
+	/**
+	 * Создает дружбу с автоматическим подтверждением
+	 */
+	async createAcceptedFriendship(requesterId: number, receiverId: number) {
+		return prisma.friendship.create({
+			data: {
+				requesterId,
+				receiverId,
+				status: FriendshipStatus.ACCEPTED
+			}
+		});
+	}
 }

@@ -19,6 +19,8 @@ export const GameState = {
   PLAYING:         'playing',
   PAUSED:          'paused',
   GAME_OVER:       'gameOver',
+  ERROR:           'error',
+
 } as const
 
 // 2) Тип-унития, равная всем значениям этого объекта
@@ -34,8 +36,8 @@ export const GameMode = {
 export type GameMode = typeof GameMode[keyof typeof GameMode]
 
 export interface GameScore {
-  player: number; // left paddle
-  computer: number; // right paddle (may be a player or a computer)
+  leftPlayer: number; // left paddle
+  rightPlayer: number; // right paddle (may be a player or a computer)
 }
 
 export interface GamesStateDto {

@@ -16,10 +16,16 @@ export class MatchWebSocketController {
 					websocket: true,
 					preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
 						try {
-							await request.jwtVerify();
+							const token = (request.query as any).token as string | undefined;
+							if (!token) {
+								reply.code(401).send({ error: 'Unauthorized: no token' });
+								throw new Error('No token');
+							}
+							const payload = fastify.jwt.verify(token);
+							(request as any).user = payload;
 						} catch (err) {
-							reply.code(401).send({ error: 'Unauthorized' });
-							throw err; // прерываем дальнейшую обработку
+							reply.code(401).send({ error: 'Unauthorized: invalid token' });
+							throw err;
 						}
 					}
 				}, 

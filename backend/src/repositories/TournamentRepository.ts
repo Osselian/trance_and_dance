@@ -13,7 +13,10 @@ export class TournamentRepository {
 	}
 
 	async findAll(): Promise<Tournament[]> {
-		return prisma.tournament.findMany({ orderBy:  { startDate: 'asc'}})
+		return prisma.tournament.findMany({ orderBy:  { startDate: 'asc'}, include: {
+      participants: true,  // подтягиваем список участников
+      matches:      true   // и, если нужно, сетку матчей
+    }})
 	}
 
 	async findActive(): Promise<Tournament[]> {

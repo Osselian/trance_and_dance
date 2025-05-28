@@ -24,9 +24,9 @@ export class TournamentMatchService {
 	}
 
 
-	async getBracket(tournamentId: number): Promise<TournamentMatch[]> {
-		return this.tmRepo.findAllByTournament(tournamentId);
-	}
+	// async getBracket(tournamentId: number): Promise<TournamentMatch[]> {
+	// 	return this.tmRepo.findAllByTournament(tournamentId);
+	// }
 
 	// async completeMatch(tournamentMatchId: number, result: string): 
 	// 	Promise<TournamentMatch> 

@@ -33,6 +33,6 @@ export const GameMode = {
 export type GameMode = typeof GameMode[keyof typeof GameMode]
 
 export interface GameScore {
-  player: number;
-  opponent: number;
+  player1: number;
+  player2: number;
 } 

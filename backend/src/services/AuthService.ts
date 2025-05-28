@@ -1,11 +1,15 @@
 import bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/UserRepository';
 import { OAuth2Client } from 'google-auth-library';
+import { SystemUserService } from './SystemUserService';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class AuthService{
-	constructor(private userRepo = new UserRepository()) {}
+	private userRepo = new UserRepository();
+	private systemUserService = new SystemUserService();
+
+	constructor() {}
 
 	async register(email: string, username: string, password: string) {
 		const existingUser = await this.userRepo.existsByEmailOrUsername(email, username);
@@ -16,7 +20,18 @@ export class AuthService{
 			throw new Error('Password required!');
 
 		const hash = await bcrypt.hash(password, 10);
-		return this.userRepo.createUser(email, username, hash);
+
+		// Получаем пользователя после регистрации
+		const user = await this.userRepo.createUser(
+			email,
+			username,
+			hash,
+		);
+
+		// Добавляем системного пользователя в друзья
+		await this.systemUserService.addSystemUserAsFriend(user.id);
+
+		return user;
 	}
 
 	async validateUser(email: string, password: string) {
@@ -55,6 +70,7 @@ export class AuthService{
 					email,
 					username,
 					avatarUrl});
+				await this.systemUserService.addSystemUserAsFriend(user.id);
 			}
 		}
 		return user;

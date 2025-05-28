@@ -16,6 +16,10 @@ interface UIConversation {
 
 // Страница чата без WebSocket (REST-поллинг), с REST-приглашением в Pong
 export async function ChatPage(): Promise<HTMLElement> {
+
+  const shownInvites = new Set<number>();
+  const systemUser = await ChatAPI.getSystemUser();
+  const systemUserId = systemUser.id;
   const me = await ChatAPI.getMe();
   const currentUserId = me.id;
 
@@ -83,8 +87,49 @@ export async function ChatPage(): Promise<HTMLElement> {
     inputWrapper.classList.remove('hidden');
   }
 
+function renderPongInvite(matchId: number, fromUserId: number) {
+  const inviteEl = document.createElement('div');
+  inviteEl.className = 'p-2 bg-blue-100 rounded mb-2';
+
+  // Можно подтянуть имя через friends/fetch или хранить в conv
+  const name = fromUserId === currentUserId ? 'Вы' : 'Игрок';
+  inviteEl.textContent = `${name} приглашает вас в Pong. `;
+
+  const accept = document.createElement('button');
+  accept.textContent = 'Принять';
+  accept.className = 'ml-2 p-1 bg-green-500 text-white rounded';
+  accept.onclick = () => {
+    router.navigate(`#/play/quick/${matchId}`);
+  };
+
+  inviteEl.append(accept);
+  chatWindow.append(inviteEl);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
   // Добавление сообщения в окно
   function appendMessage(m: Message) {
+    let data: any;
+    try {
+      data = JSON.parse(m.content);
+    } catch {
+      data = null;
+    }
+
+      // если это pong-invite и мы его уже показали — пропускаем
+    if (data?.type === 'pong-invite') {
+      if (shownInvites.has(m.id)) return;
+      shownInvites.add(m.id);
+      renderPongInvite(data.matchId, m.senderId);
+      return;
+    }
+    if (m.type === 'TOURNAMENT') {
+      const sysEl = document.createElement('div');
+      sysEl.className = 'text-center italic text-gray-500 my-2';
+      sysEl.textContent = m.content;
+      chatWindow.append(sysEl);
+      return;
+    }
     const msgEl = document.createElement('div');
     msgEl.className = m.senderId === currentUserId ? 'text-right' : 'text-left';
     msgEl.textContent = m.content;
@@ -156,11 +201,16 @@ export async function ChatPage(): Promise<HTMLElement> {
       avatar.src = conv.avatarUrl ?? '';
       userName.textContent = conv.username;
     }
+    const isSystemChat = userId === systemUserId;
+    blockBtn .style.display = isSystemChat ? 'none' : '';
+    pongBtn  .style.display = isSystemChat ? 'none' : '';
+    profileBtn.style.display = isSystemChat ? 'none' : '';
     await checkBlock();
     chatWindow.innerHTML = '';
+    shownInvites.clear();
     showChatUI();
     await loadMessages();
-    pollTimer = window.setInterval(loadMessages, 5000);
+    pollTimer = window.setInterval(loadMessages, 3000);
   }
 
   // Загрузка сообщений
@@ -232,11 +282,22 @@ export async function ChatPage(): Promise<HTMLElement> {
     }
   }
 
-  // Приглашение в Pong
+    // Приглашение в Pong
   async function invitePong() {
     if (!selectedUserId) return;
-    const { matchId } = await MatchAPI.createMatchInvite(selectedUserId);
-    router.navigate(`#/play/quick/${matchId}`);
+    pongBtn.disabled = true;
+    try {
+      const { matchId } = await MatchAPI.createMatchInvite(selectedUserId);
+      await ChatAPI.sendMessage(
+        selectedUserId,
+        JSON.stringify({ type: 'pong-invite', matchId })
+      );
+      router.navigate(`#/play/quick/${matchId}`);
+    } catch (err: any) {
+      alert('Не удалось пригласить в Pong: ' + err.message);
+    } finally {
+      pongBtn.disabled = false;
+    }
   }
 
   // --- Привязка событий ---

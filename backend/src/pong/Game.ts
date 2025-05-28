@@ -24,7 +24,7 @@ export class Game {
 	public start(){
 	//	this.isGameStartCountdown = true;
 		this.gameState = 'PLAYING';
-		this.lastScoreTime = Date.now();
+		this.lastScoreTime = performance.now();
 		this.ball.hide(); // Hide ball during countdown
 		this.startPaddleReset(); // Start smooth paddle reset
 	}
@@ -74,11 +74,11 @@ export class Game {
 		this.isWaitingForBallSpawn = 3;
 	}		
 
-	public handlePlayerInput(direction: string, playerId: number): void {
+	public handlePlayerInput(direction: string, playerNumber: number): void {
 		if (this.gameState !== 'PLAYING') return;
 
 		// const direction = data.direction;
-		const paddle = playerId === 1 ? this.player1Paddle : this.player2Paddle;
+		const paddle = playerNumber === 1 ? this.player1Paddle : this.player2Paddle;
 
 		if (direction === 'up') {
 			paddle.move('up', 600);
@@ -178,25 +178,29 @@ export class Game {
 	}
 
 	private setCountDown(currentTime: number) {
-		if (this.isWaitingForBallSpawn) {
+		if (this.isWaitingForBallSpawn > 0) {
 			const timeElapsed = currentTime - this.lastScoreTime;
-			const segmentDuration = this.SCORE_DELAY / 3; // Делим на 3 сегмента
+			const segmentDuration = this.SCORE_DELAY / 4; // Делим на 3 сегмента
 
 
 			// Обновляем значение счетчика в зависимости от прошедшего времени
 			if (timeElapsed < segmentDuration) {
 				// Первая треть времени - значение 3
-				this.isWaitingForBallSpawn = 3;
+				this.isWaitingForBallSpawn = 4;
 			} else if (timeElapsed < segmentDuration * 2) {
 				// Вторая треть времени - значение 2
+				this.isWaitingForBallSpawn = 3;
+			} else if (timeElapsed < segmentDuration * 3) {
+				// Последняя треть времени - значение 1
 				this.isWaitingForBallSpawn = 2;
 			} else if (timeElapsed < this.SCORE_DELAY) {
 				// Последняя треть времени - значение 1
 				this.isWaitingForBallSpawn = 1;
 			} else {
 				// По истечении всего времени, сбрасываем мяч
+				console.log('RESET BOLL');
 				this.resetBall();
-				this.lastScoreTime = 0;
+				// this.lastScoreTime = 0;
 				this.isWaitingForBallSpawn = 0;
 				this.targetPaddlePositions = null;
 			}

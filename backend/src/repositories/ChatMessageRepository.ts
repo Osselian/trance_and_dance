@@ -36,6 +36,15 @@ export class ChatMessageRepository {
 				{ createdAt: 'asc'},
 				{ id: 'asc'}
 			],
+      select: {
+        id: true,
+        senderId: true,
+        receiverId: true,
+        content: true,
+        createdAt: true,
+        type: true,      // ← новенькое
+        isRead: true
+      },
 			take: limit,
 			...((lastId !== undefined && lastCreatedAt !== undefined) 
 				? { cursor: {createdAt_id: {createdAt: lastCreatedAt, id: lastId}}, skip: 1} 
@@ -59,6 +68,15 @@ export class ChatMessageRepository {
 				{ createdAt: 'asc'},
 				{ id: 'asc'}
 			],
+      select: {
+        id: true,
+        senderId: true,
+        receiverId: true,
+        content: true,
+        createdAt: true,
+        type: true,      // ← новенькое
+        isRead: true
+      },
 			take: limit,
 			...((lastId !== undefined && lastCreatedAt !== undefined) 
 				? { cursor : {createdAt_id: {createdAt: lastCreatedAt, id: lastId}}, skip: 1}

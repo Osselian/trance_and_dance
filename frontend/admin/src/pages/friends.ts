@@ -112,7 +112,12 @@ export async function initFriends(): Promise<void> {
       allUsersUL.innerHTML = '<li>No one found</li>';
     } else {
       users.forEach((u: User) => {
-        if (u.id === selfId || friendIds.includes(u.id) || incomingIds.has(u.id)) return;
+        if (
+        u.id === selfId ||
+        friendIds.includes(u.id) ||
+        incomingIds.has(u.id) ||
+        u.username === 'TBD_Placeholder'
+        ) return;
 
         const li = document.createElement('li');
         li.className = 'flex justify-between p-2 bg-gray-800 rounded';

@@ -1,20 +1,22 @@
 import { Game } from "../pong/Game";
 import { WebSocket } from '@fastify/websocket';
 import { GamesStateDto } from "../pong/GamesStateDto";
+import { SocketWithUser } from "./MatchWebsocketService";
 
 export class GameHandler {
-	private clients: Map<number, WebSocket> = new Map();
+	private clients: Map<number, SocketWithUser> = new Map();
 	private gameInterval: NodeJS.Timeout | null = null;
 	private game: Game;
 	private playersReady: Set<number> = new Set();
 	private isGameCompleted: boolean = false;
 	private winnerId: number | null = null;
+	private loserId: number | null = null;
 
 	constructor() {
 		this.game = new Game();
 	}
 
-	public addClient(playerId: number, socket: WebSocket): void {
+	public addClient(playerId: number, socket: SocketWithUser): void {
 		this.clients.set(playerId, socket);
 	}
 
@@ -30,8 +32,16 @@ export class GameHandler {
 		this.winnerId = winnerId;
 	}
 	
-	public handleClientMessage(playerId: number, message: string): void {
-		const data = JSON.parse(message);
+	public getLoserId(): number | null {
+		return this.loserId;
+	}
+
+	public setLoserId(loserId: number | null): void {
+		this.loserId = loserId;
+	}
+
+	public handleClientMessage(playerId: number, playerNumber: number, data: any): void {
+		// const data = JSON.parse(message);
 		
 		switch (data.type) {
 			case 'ready':
@@ -39,7 +49,7 @@ export class GameHandler {
 				break;
 			case 'move':
 				if (data.direction && typeof data.direction === 'string') 
-					this.game.handlePlayerInput(data.direction, playerId);
+					this.game.handlePlayerInput(data.direction, playerNumber);
 				break;
 			case 'start':
 				this.startGame();
@@ -52,6 +62,8 @@ export class GameHandler {
 				break;
 			case 'reset':
 				this.resetGame();
+				break;
+			default:
 				break;
 		}
 	}
@@ -96,29 +108,25 @@ export class GameHandler {
 		this.gameInterval = setInterval(() => {
 			this.game.updateState(0.017); // 17 ms
 			const state = this.game.getState();
-			if (state.gameState === 'GAME_OVER') {
+			if (state.gameState === 'GAME_OVER' && state.winnerId) {
 				this.stopGame();
-				this.winnerId = state.winnerId;
+				this.defineWinnerAndLoser(state.winnerId);
 			}
 			this.broadcastGameState(state);
 		}, 17);
 	}
 
-	public pauseGame(): void {
-		this.game.pause();
-		if (this.gameInterval) {
-			clearInterval(this.gameInterval);
-			this.gameInterval = null;
+	private defineWinnerAndLoser(winnerPlayerNumber: number): void {
+		const players = Array.from(this.clients.keys());
+		for (const playerId of players) {
+			if (this.clients.get(playerId)?.playerNumber === winnerPlayerNumber)
+				this.winnerId = playerId;
+			else
+				this.loserId = playerId;
 		}
 	}
 
-	public resumeGame(): void {
-		this.startGame();
-	}
 
-	public resetGame(): void {
-		this.game.reset();
-	}
 //под вопросом
 	public stopGame(): void {
 		this.isGameCompleted = true;
@@ -133,11 +141,9 @@ export class GameHandler {
 		};
 		this.clients.forEach((client) => {
 			client.send(JSON.stringify(gameStopMessage));
-		}
-		);
+		});
 		this.playersReady.clear();
 	}
-
 
 	private broadcastGameState(state:GamesStateDto): void {
 		try {
@@ -155,4 +161,21 @@ export class GameHandler {
 			console.error("Error broadcasting game state:", error);
 		}
 	}
+
+	public pauseGame(): void {
+		this.game.pause();
+		if (this.gameInterval) {
+			clearInterval(this.gameInterval);
+			this.gameInterval = null;
+		}
+	}
+
+	public resumeGame(): void {
+		this.startGame();
+	}
+
+	public resetGame(): void {
+		this.game.reset();
+	}
+
 }

@@ -21,34 +21,60 @@ export const profileView = `
     </div>
 
     <div class="flex-grow space-y-4">
-      <table class="text-left w-full">
-        <tbody>
-          <tr>
-            <td class="table-cell-label">Login</td>
-            <td class="table-cell-input">
-              <input name="login" class="input" readonly />
-            </td>
-          </tr>
-          <tr>
-            <td class="table-cell-label">Email</td>
-            <td class="table-cell-input">
-              <input name="email" type="email" class="input" readonly>
-            </td>
-          </tr>
-          <tr>
-            <td class="table-cell-label">Password</td>
-            <td class="table-cell-input">
-              <input
-                name="password"
-                type="password"
-                class="input"
-                placeholder="••••••"
-                readonly
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="flex flex-col md:flex-row gap-8">
+        <!-- Левая таблица (профиль) -->
+        <div class="flex-1">
+          <table class="text-left w-full">
+            <tbody>
+              <tr>
+                <td class="table-cell-label">Login</td>
+                <td class="table-cell-input">
+                  <input name="login" class="input" readonly />
+                </td>
+              </tr>
+              <tr>
+                <td class="table-cell-label">Email</td>
+                <td class="table-cell-input">
+                  <input name="email" type="email" class="input" readonly>
+                </td>
+              </tr>
+              <tr>
+                <td class="table-cell-label">Password</td>
+                <td class="table-cell-input">
+                  <input
+                    name="password"
+                    type="password"
+                    class="input"
+                    placeholder="••••••"
+                    readonly
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Правая таблица (статистика) -->
+        <div class="flex-1">
+          <h2 class="text-xl font-semibold mb-3">Statistics</h2>
+          <table class="text-left w-full border-collapse">
+            <tbody>
+              <tr>
+                <td class="table-cell-label">Wins</td>
+                <td class="table-cell-value" id="stats-wins">0</td>
+              </tr>
+              <tr>
+                <td class="table-cell-label">Losses</td>
+                <td class="table-cell-value" id="stats-losses">0</td>
+              </tr>
+              <tr>
+                <td class="table-cell-label">Total Games</td>
+                <td class="table-cell-value" id="stats-total">0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div class="flex gap-4">
         <button id="edit-btn"   type="button" class="btn-primary w-24">Edit</button>
@@ -65,7 +91,7 @@ export const profileView = `
 import { AuthAPI } from '../api/auth';
 import type { Profile } from '../api/auth';
 import { BASE } from '../api/auth'
-import { UserAPI } from '../api/user';
+import { UserAPI, UserStats } from '../api/user';
 
 export async function profileInit(userId?: number) {
   // 1. Вначале только получение профиля и refresh-логика
@@ -106,6 +132,12 @@ export async function profileInit(userId?: number) {
   const avatarImg   = document.getElementById('avatar-img')! as HTMLImageElement;
   const avatarInput = document.getElementById('avatar-input')! as HTMLInputElement;
 
+  //statistics
+  const statsWins = document.getElementById('stats-wins')! as HTMLElement;
+  const statsLosses = document.getElementById('stats-losses')! as HTMLElement;
+  // const statsWinrate = document.getElementById('stats-winrate')! as HTMLElement;
+  const statsTotal = document.getElementById('stats-total')! as HTMLElement;
+
   function setEditing(enabled: boolean) {
     [loginEl, emailEl, passEl].forEach(el =>
       enabled ? el.removeAttribute('readonly') : el.setAttribute('readonly', 'true')
@@ -122,6 +154,10 @@ export async function profileInit(userId?: number) {
     saveBtn.classList.add('hidden');
     cancelBtn.classList.add('hidden');
     avatarInput.classList.add('hidden');
+    // statsWins.classList.add('hidden');
+    // statsLosses.classList.add('hidden');
+    // statsTotal.classList.add('hidden');
+
   }
 
   // 5. Заполняем поля
@@ -129,6 +165,15 @@ export async function profileInit(userId?: number) {
   emailEl.value = p.email;
   passEl.value  = '';
   avatarImg.src = p.avatarUrl.startsWith('http') ? p.avatarUrl : BASE + p.avatarUrl;
+
+  	const stats = (await UserAPI.getUserStats(p.id));
+	statsWins.textContent = stats.wins.toString();
+	statsLosses.textContent = stats.losses.toString();
+
+	const totalGames = stats.wins + stats.losses;
+	statsTotal.textContent = totalGames.toString();
+
+
 
   let original = p;
   let newAvatarFile: File | null = null;

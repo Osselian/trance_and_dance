@@ -57,16 +57,16 @@ export class TournamentService {
 		return participant;
 	}
 
-	async getTournament(id: number): Promise<Tournament[]> {
-		return this.tournamentRepo.findActive();
-	}
-
-	async getActiveTournaments(): Promise<Tournament[]> {
-		return this.tournamentRepo.findActive();
+	async getTournament(id: number): Promise<Tournament| null > {
+		return this.tournamentRepo.findById(id);
 	}
 
 	async listTournaments(): Promise<Tournament[]> {
 		return this.tournamentRepo.findAll();
+	}
+	
+	async getActiveTournaments(): Promise<Tournament[]> {
+		return this.tournamentRepo.findActive();
 	}
 
 	async updateTournament(id: number, updates: TournamentDto): Promise<Tournament> {
@@ -79,6 +79,7 @@ export class TournamentService {
 	}
 
 	async chechAndUpdateTournamentStatus(): Promise<Tournament[]> {
+		
 		const readyTournaments: Tournament[] = [];
 		const tournaments: Tournament[] = 
 			await this.tournamentRepo.findNotCompleted();
@@ -117,14 +118,14 @@ export class TournamentService {
 			.findNotCompletedMatchesByRound(tournament.id, currentRound);
 
 		if (notCompleted.length === 0) {
-			this.updateTournamentRound(tournament.id, currentRound + 1);
-			const pending: TournamentMatch[] = await this.tmmRepo
-				.findPendingMatchesByRound(tournament.id, currentRound);
-			for (const pendingMatch  of pending) {
-				const match = await this.matchRepo.findById(pendingMatch.matchId);
+			const completed = await this.tmmRepo
+			.findByTournamentAndRound(tournament.id, currentRound);
+			for (const completedMatch  of completed) {
+				const match = await this.matchRepo.findById(completedMatch.matchId);
 				await this.advanceWinnerToNextRound(tournament, 
-					pendingMatch, match?.winnerId!);	
-			}
+					completedMatch, match?.winnerId!);	
+				}
+			this.updateTournamentRound(tournament.id, currentRound + 1);
 		}
 	}
 
@@ -174,6 +175,10 @@ export class TournamentService {
 			participants,
 			tournament.name
 		);
+	}
+
+	async getBracket(tournamentId: number): Promise<TournamentMatch[]> {
+			return this.tmmRepo.findAllByTournament(tournamentId);
 	}
 	// async checkTournamentStatus(tournamentId: number): 
 	// 	Promise<{isReady: boolean, playersCount: number, requiredPlayers: number}> 

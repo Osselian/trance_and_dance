@@ -63,8 +63,18 @@ export class TournamentChatNotifier {
 		participants: TournamentParticipant[], message: string): Promise<void>
 	{
 		for (const participant of participants) {
-			await this.chatService
-				.sendSystemMessage(participant.userId, message, this.type);
+			try {
+				await this.chatService
+					.sendSystemMessage(participant.userId, message, this.type);
+			}
+			catch (err: any) {
+				// Добавляем более подробное логирование
+				console.warn(
+					`Failed to send system message to user ${participant.userId}: ${err.message}`,
+					err
+				);
+				// Продолжаем с другими участниками
+			}
 		}
 	}
 }
