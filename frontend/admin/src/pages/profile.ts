@@ -154,6 +154,10 @@ export async function profileInit(userId?: number) {
     saveBtn.classList.add('hidden');
     cancelBtn.classList.add('hidden');
     avatarInput.classList.add('hidden');
+    // statsWins.classList.add('hidden');
+    // statsLosses.classList.add('hidden');
+    // statsTotal.classList.add('hidden');
+
   }
 
   // 5. Заполняем поля
