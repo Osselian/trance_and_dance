@@ -32,21 +32,6 @@ export const tournamentView = `
       <ul id="participants-ul" class="list-disc list-inside"></ul>
     </div>
   </div>
-
-  // <!-- Таблица матчей -->
-  // <table class="min-w-full bg-gray-800 text-white rounded-lg overflow-hidden">
-  //   <thead class="bg-gray-700">
-  //     <tr>
-  //       <th class="px-4 py-2">№</th>
-  //       <th class="px-4 py-2">Игрок 1</th>
-  //       <th class="px-4 py-2">Игрок 2</th>
-  //       <th class="px-4 py-2">Статус</th>
-  //       <th class="px-4 py-2">Результат</th>
-  //     </tr>
-  //   </thead>
-  //   <tbody id="matches-list" class="divide-y divide-gray-700"></tbody>
-  // </table>
-
   <!-- Контейнер для бракета -->
   <div id="bracket-container" class="mt-8 p-4 bg-gray-800 text-white rounded-lg max-h-[60vh] overflow-auto whitespace-nowrap">
     <!-- сетка появится здесь -->
@@ -92,7 +77,6 @@ export async function initTournament(): Promise<void> {
   const selectSize  = document.getElementById('required-players') as HTMLSelectElement;
   const startBtn    = document.getElementById('start-tournament-btn') as HTMLButtonElement;
   const joinBtn     = document.getElementById('join-tournament-btn') as HTMLButtonElement;
-  const tbody       = document.getElementById('matches-list')!;
   const bracketCt   = document.getElementById('bracket-container')!;
   const actionsBlock = document.getElementById('actions-block')!;
 
@@ -136,20 +120,6 @@ export async function initTournament(): Promise<void> {
       ul.appendChild(li);
     });
 
-    // Таблица матчей
-    tbody.innerHTML = '';
-    for (const m of (tour.matches as any[] || [])) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="px-4 py-2">${m.num}</td>
-        <td class="px-4 py-2">${m.p1 || '—'}</td>
-        <td class="px-4 py-2">${m.p2 || '—'}</td>
-        <td class="px-4 py-2">${m.status}</td>
-        <td class="px-4 py-2">${m.result || ''}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
     // Кнопка «Присоединиться»
     const isIn = participants.some(p => p.userId === userId);
     if (tour.status === 'REGISTRATION' && !isIn) {
@@ -186,9 +156,9 @@ async function renderBracket(id: string) {
   const participants: any[] = partsRes.ok ? await partsRes.json() : [];
   const nameMap = new Map<number,string>();
   participants.forEach(p => {
-    nameMap.set(p.userId, p.user.username);
+    const displayName = p.tournamentName?.trim() || p.user.username;
+    nameMap.set(p.userId, displayName);
   });
-
   // 3) Группируем матчи по раундам
   const rounds = new Map<number, any[]>();
   matches.forEach(m => {

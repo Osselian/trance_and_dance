@@ -66,7 +66,8 @@ export interface SystemUser {
 
 export const ChatAPI = {
 
-  getSystemUser: (): Promise<SystemUser> => get('/system-user'),
+  getSystemUser: (): Promise<SystemUser> => get('/user/system'),
+
   getMe: (): Promise<Me> => get('/user/profile'),
   // получить список диалогов (userId, user: {…})
   getConversations: (): Promise<Conversation[]> => get('/chat'),

@@ -8,7 +8,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     env_file:
-      - ./backend/.env
+      - ./env
     volumes:
       - ./backend/certs:/app/certs
     ports:
@@ -30,7 +30,7 @@ services:
       context: ./frontend
       dockerfile: admin/Dockerfile
     env_file:
-      - ./frontend/admin/.env
+      - ./env
     volumes:
       - ./frontend/admin/certs:/app/admin/certs
     ports:

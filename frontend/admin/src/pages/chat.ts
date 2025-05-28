@@ -19,6 +19,7 @@ export async function ChatPage(): Promise<HTMLElement> {
 
   const shownInvites = new Set<number>();
   const systemUser = await ChatAPI.getSystemUser();
+  const systemUserId = systemUser.id;
   const me = await ChatAPI.getMe();
   const currentUserId = me.id;
 
@@ -209,7 +210,7 @@ function renderPongInvite(matchId: number, fromUserId: number) {
     shownInvites.clear();
     showChatUI();
     await loadMessages();
-    pollTimer = window.setInterval(loadMessages, 1000);
+    pollTimer = window.setInterval(loadMessages, 3000);
   }
 
   // Загрузка сообщений
