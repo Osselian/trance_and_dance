@@ -70,6 +70,7 @@ export class AuthService{
 					email,
 					username,
 					avatarUrl});
+				await this.systemUserService.addSystemUserAsFriend(user.id);
 			}
 		}
 		return user;
