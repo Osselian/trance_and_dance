@@ -6,21 +6,24 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
     container_name: elasticsearch
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      test: ["CMD-SHELL", "curl -k -f https://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
       - bootstrap.memory_lock=true
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
+      - ./devops/elk/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
       - elasticsearch-data:/usr/share/elasticsearch/data
+      - ./devops/elk/certs/ELK.crt:/usr/share/elasticsearch/config/certs/ELK.crt:ro
+      - ./devops/elk/certs/ELK.key:/usr/share/elasticsearch/config/certs/ELK.key:ro
     ports:
       - "9205:9200"
     networks:
@@ -31,12 +34,15 @@ services:
     image: docker.elastic.co/logstash/logstash:8.2.0
     container_name: logstash
     volumes:
-      - ./devops/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./devops/logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./devops/elk/certs/ELK.crt:/usr/share/logstash/config/certs/ELK.crt:ro
     ports:
       - "12201:12201/udp"
-      - "9600:9600/tcp"
+      #- "9600:9600/tcp"
     environment:
       - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     networks:
       - monitoring-tier
     depends_on:
@@ -49,16 +55,20 @@ services:
     container_name: kibana
     volumes:
       - ./devops/kibana/export.ndjson:/tmp/export.ndjson:ro
+      - ./devops/elk/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - ./devops/elk/certs/ELK.crt:/usr/share/kibana/config/certs/ELK.crt:ro
+      - ./devops/elk/certs/ELK.key:/usr/share/kibana/config/certs/ELK.key:ro
+      - ./devops/elk/certs/rootCA.pem:/usr/share/kibana/config/certs/rootCA.pem:ro
     ports:
       - "5601:5601"
-    environment:
-      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
-      # если у вас включён ssl в ES, добавьте CA:
-      # ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: "/path/to/ca.pem"
+    #environment:
+      #- SERVER_NAME=kibana
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      test: ["CMD-SHELL", "curl -k -u ${ELASTIC_USERNAME}:${ELASTIC_PASSWORD} -f https://localhost:5601/api/status || exit 1"]
+      #test: ["CMD-SHELL", "curl -k -f https://localhost:5601/api/status || exit 1"]
+      #test: ["CMD-SHELL", "curl -k -u kibana_system:changeme_kibana -f https://localhost:5601/api/status || exit 1"]
       interval: 10s
-      retries: 10
+      retries: 20
     networks:
       - monitoring-tier
     depends_on:
@@ -77,7 +87,8 @@ services:
       - -c
       - |
         echo "→ Импорт Saved Objects в Kibana…"
-        curl -X POST http://kibana:5601/api/saved_objects/_import?overwrite=true \
+        curl -k -u ${ELASTIC_USERNAME}:${ELASTIC_PASSWORD} \
+          -X POST https://kibana:5601/api/saved_objects/_import?overwrite=true \
           -H 'kbn-xsrf: true' \
           --form file=@/tmp/export.ndjson \
         && echo "✔️ Импорт завершён."
