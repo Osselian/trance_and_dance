@@ -24,6 +24,8 @@ devops/elk/certs
 # папки с загруженными файлами
 backend/uploads/
 
+devops/elk/config/kibana.yml
+
 # Vite / временные файлы
 .vite/
 .cache/
