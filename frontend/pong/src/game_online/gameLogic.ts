@@ -105,6 +105,6 @@ export function navigateToHome() {
 }
  export function startQuickGame(ws: WebSocket, settings: any) {
    renderGameScreen();
-  const game = new Game(GameMode.QUICK, ws,settings);
-  game.start();
+   currentGame = new Game(GameMode.QUICK, ws,settings);
+   currentGame.start();
 }
