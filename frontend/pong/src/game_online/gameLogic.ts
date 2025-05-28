@@ -4,6 +4,7 @@ import { GameMode } from '../utils/types';
 // Переменная для хранения состояния игры
 let currentGame: Game | null = null;
 let previousUrl: string | null = null;
+let socket: WebSocket | null = null;
 
 // Добавляем обработчик popstate для обработки кнопки "назад" браузера
 window.addEventListener('popstate', (event) => {
@@ -60,6 +61,7 @@ function exitGame() {
   if (currentGame) {
     // Здесь должен быть метод остановки игры
     // currentGame.stop();
+	socket?.close();	
     currentGame = null;
   }
 
@@ -105,6 +107,7 @@ export function navigateToHome() {
 }
  export function startQuickGame(ws: WebSocket, settings: any) {
    renderGameScreen();
+   socket = ws;
    currentGame = new Game(GameMode.QUICK, ws,settings);
    currentGame.start();
 }
