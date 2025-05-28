@@ -18,7 +18,7 @@ interface UIConversation {
 export async function ChatPage(): Promise<HTMLElement> {
 
   const shownInvites = new Set<number>();
-  const shownAlerts = new Set<number>();
+  const systemUser = await ChatAPI.getSystemUser();
   const me = await ChatAPI.getMe();
   const currentUserId = me.id;
 
@@ -123,12 +123,11 @@ function renderPongInvite(matchId: number, fromUserId: number) {
       return;
     }
     if (m.type === 'TOURNAMENT') {
-      if (!shownAlerts.has(m.id)) {
-        shownAlerts.add(m.id)
-        alert(m.content)    // <-- здесь ваш нативный алерт
-      }
-    // и при желании не рендерить в чате блок вовсе
-      return
+      const sysEl = document.createElement('div');
+      sysEl.className = 'text-center italic text-gray-500 my-2';
+      sysEl.textContent = m.content;
+      chatWindow.append(sysEl);
+      return;
     }
     const msgEl = document.createElement('div');
     msgEl.className = m.senderId === currentUserId ? 'text-right' : 'text-left';
@@ -201,6 +200,10 @@ function renderPongInvite(matchId: number, fromUserId: number) {
       avatar.src = conv.avatarUrl ?? '';
       userName.textContent = conv.username;
     }
+    const isSystemChat = userId === systemUserId;
+    blockBtn .style.display = isSystemChat ? 'none' : '';
+    pongBtn  .style.display = isSystemChat ? 'none' : '';
+    profileBtn.style.display = isSystemChat ? 'none' : '';
     await checkBlock();
     chatWindow.innerHTML = '';
     shownInvites.clear();

@@ -33,19 +33,19 @@ export const tournamentView = `
     </div>
   </div>
 
-  <!-- Таблица матчей -->
-  <table class="min-w-full bg-gray-800 text-white rounded-lg overflow-hidden">
-    <thead class="bg-gray-700">
-      <tr>
-        <th class="px-4 py-2">№</th>
-        <th class="px-4 py-2">Игрок 1</th>
-        <th class="px-4 py-2">Игрок 2</th>
-        <th class="px-4 py-2">Статус</th>
-        <th class="px-4 py-2">Результат</th>
-      </tr>
-    </thead>
-    <tbody id="matches-list" class="divide-y divide-gray-700"></tbody>
-  </table>
+  // <!-- Таблица матчей -->
+  // <table class="min-w-full bg-gray-800 text-white rounded-lg overflow-hidden">
+  //   <thead class="bg-gray-700">
+  //     <tr>
+  //       <th class="px-4 py-2">№</th>
+  //       <th class="px-4 py-2">Игрок 1</th>
+  //       <th class="px-4 py-2">Игрок 2</th>
+  //       <th class="px-4 py-2">Статус</th>
+  //       <th class="px-4 py-2">Результат</th>
+  //     </tr>
+  //   </thead>
+  //   <tbody id="matches-list" class="divide-y divide-gray-700"></tbody>
+  // </table>
 
   <!-- Контейнер для бракета -->
   <div id="bracket-container" class="mt-8 p-4 bg-gray-800 text-white rounded-lg max-h-[60vh] overflow-auto whitespace-nowrap">

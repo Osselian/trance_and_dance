@@ -60,8 +60,13 @@ export interface Me {
   avatarUrl: string | null;
 }
 
+export interface SystemUser {
+  id: number;
+}
+
 export const ChatAPI = {
 
+  getSystemUser: (): Promise<SystemUser> => get('/system-user'),
   getMe: (): Promise<Me> => get('/user/profile'),
   // получить список диалогов (userId, user: {…})
   getConversations: (): Promise<Conversation[]> => get('/chat'),
