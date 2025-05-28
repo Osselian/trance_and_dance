@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { UserService } from "../../services/UserService";
 import fs from 'fs';
 import path from 'path';
+import { SystemUserService } from "../../services/SystemUserService";
 
 interface StatusQuery {
   userId: string | string[];
@@ -9,6 +10,7 @@ interface StatusQuery {
 
 export class UserController {
 	private userService = new UserService();
+	private systemUserService = new SystemUserService();
 
 	constructor(private fastify: FastifyInstance){}
 
@@ -24,6 +26,7 @@ export class UserController {
 		this.fastify.get('/:id', this.getUserById.bind(this));
 		this.fastify.get('/statuses', this.getOnlineStatuses.bind(this));
 		this.fastify.get('/:id/stats', this.getUserStats.bind(this));
+		this.fastify.get('/system', this.getSystemUser.bind(this));
 	}
 
 	async getAll(req: FastifyRequest, reply: FastifyReply){
@@ -165,6 +168,19 @@ export class UserController {
 			}
 
 			reply.send(profile);
+		} catch (err) {
+			const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+			reply.status(500).send({ message: errorMsg });
+		}
+	}
+
+	private async getSystemUser(req: FastifyRequest, reply: FastifyReply) {
+		try {
+			const systemUser = await this.systemUserService.ensureSystemUserExists();
+			if (!systemUser) {
+				return reply.status(404).send({ message: "System user not found" });
+			}
+			reply.send(systemUser);
 		} catch (err) {
 			const errorMsg = err instanceof Error ? err.message : 'Unknown error';
 			reply.status(500).send({ message: errorMsg });

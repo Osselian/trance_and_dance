@@ -19,6 +19,8 @@ export const GameState = {
   PLAYING:         'playing',
   PAUSED:          'paused',
   GAME_OVER:       'gameOver',
+  ERROR:           'error',
+
 } as const
 
 // 2) Тип-унития, равная всем значениям этого объекта
