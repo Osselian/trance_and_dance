@@ -68,10 +68,6 @@ export const profileView = `
                 <td class="table-cell-value" id="stats-losses">0</td>
               </tr>
               <tr>
-                <td class="table-cell-label">Win Rate</td>
-                <td class="table-cell-value" id="stats-winrate">0%</td>
-              </tr>
-              <tr>
                 <td class="table-cell-label">Total Games</td>
                 <td class="table-cell-value" id="stats-total">0</td>
               </tr>
@@ -139,7 +135,7 @@ export async function profileInit(userId?: number) {
   //statistics
   const statsWins = document.getElementById('stats-wins')! as HTMLElement;
   const statsLosses = document.getElementById('stats-losses')! as HTMLElement;
-  const statsWinrate = document.getElementById('stats-winrate')! as HTMLElement;
+  // const statsWinrate = document.getElementById('stats-winrate')! as HTMLElement;
   const statsTotal = document.getElementById('stats-total')! as HTMLElement;
 
   function setEditing(enabled: boolean) {
@@ -167,7 +163,7 @@ export async function profileInit(userId?: number) {
   avatarImg.src = p.avatarUrl.startsWith('http') ? p.avatarUrl : BASE + p.avatarUrl;
 
   	const stats = (await UserAPI.getUserStats(p.id));
-	statsWinrate.textContent = stats.wins.toString();
+	statsWins.textContent = stats.wins.toString();
 	statsLosses.textContent = stats.losses.toString();
 
 	const totalGames = stats.wins + stats.losses;
