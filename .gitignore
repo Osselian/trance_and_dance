@@ -3,6 +3,7 @@ frontend/admin/certs/
 frontend/pong/certs/
 devops/monitoring/grafana/certs/
 devops/monitoring/prometheus/certs/
+devops/elk/certs
 *.pem
 *.key
 *.crt
@@ -22,6 +23,8 @@ devops/monitoring/prometheus/certs/
 
 # папки с загруженными файлами
 backend/uploads/
+
+devops/elk/config/kibana.yml
 
 # Vite / временные файлы
 .vite/
