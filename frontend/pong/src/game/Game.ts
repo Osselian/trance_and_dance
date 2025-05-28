@@ -268,7 +268,16 @@ private setupEventListeners(): void {
       this.ctx.font = '30px Arial';
       this.ctx.fillStyle = '#FFFFFF';
       const winner = this.score.getWinner();
-      this.ctx.fillText(`${winner === 'player' ? 'You' : 'Computer'} won! Press SPACE to play again`, 
+      let left_winner;
+      let right_winner;
+      if (this.gameMode === GameMode.VS_PLAYER) {
+        left_winner = 'Left player';
+        right_winner = 'Right player';
+      } else if (this.gameMode === GameMode.VS_COMPUTER) {
+        left_winner = 'You';
+        right_winner = 'Computer';
+      }
+      this.ctx.fillText(`${winner === 'player' ? left_winner : right_winner} won! Press SPACE to play again`, 
         this.canvas.width / 2, this.canvas.height / 2);
     }
   }
